@@ -8,18 +8,16 @@ from __future__ import annotations
 
 import hashlib
 import re
-import sqlite3
 import time
 from collections.abc import Callable
-from pathlib import Path
 from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, ValidationError
+from sqlalchemy.engine import Engine
 
-from src import fireworks
+from src import db, fireworks
 from src.context import Table, render_briefing
 from src.fireworks import Message, Usage
-from src.utils import DB_PATH
 
 DEFAULT_MODEL = "accounts/fireworks/models/glm-5p3-flash"
 
@@ -38,6 +36,8 @@ using the notes to map the question's words to codes.
 - Select only the columns needed to answer. Use ORDER BY for "top/most/least" questions and LIMIT \
 for "top N".
 - For follow-up questions, build on the previous query.
+- If the message is not a question about this data (gibberish, a greeting, an unrelated request), \
+reply with "sql" as an empty string and say why in "reasoning". Never repeat the previous query unless asked.
 
 Reply as JSON: {"reasoning": "<one or two short sentences>", "sql": "<the query>"}
 
@@ -45,7 +45,29 @@ Reply as JSON: {"reasoning": "<one or two short sentences>", "sql": "<the query>
 """
 
 READ_ONLY_START = re.compile(r"^\s*(select|with)\b", re.IGNORECASE)
-WRITE_KEYWORDS = re.compile(r"\b(insert|update|delete|drop|alter|create|attach|detach|pragma|vacuum)\b", re.IGNORECASE)
+WRITE_KEYWORDS = re.compile(
+    r"\b(insert|update|delete|drop|alter|create|attach|detach|pragma|vacuum|into|grant|revoke|truncate|merge|copy|lock|call)\b",
+    re.IGNORECASE,
+)
+# The SQLite wording in the prompts is swapped for the connected database's (see for_dialect).
+DIALECTS = {
+    "sqlite": ("SQLite", "", ""),
+    "postgresql": (
+        "PostgreSQL",
+        'PostgreSQL dialect. Double-quote identifiers that are SQL keywords or mixed case, e.g. the table "order".',
+        "For dates use EXTRACT(YEAR FROM col) or ranges such as col >= '1997-01-01'; CAST text before comparing it as a number or date.",
+    ),
+    "mysql": (
+        "MySQL",
+        'MySQL dialect with ANSI_QUOTES: double-quote identifiers that are SQL keywords, e.g. the table "order"; single-quote strings.',
+        "For dates use YEAR(col) or ranges such as col >= '1997-01-01'.",
+    ),
+    "mariadb": (
+        "MariaDB",
+        'MariaDB dialect with ANSI_QUOTES: double-quote identifiers that are SQL keywords, e.g. the table "order"; single-quote strings.',
+        "For dates use YEAR(col) or ranges such as col >= '1997-01-01'.",
+    ),
+}
 STRING_LITERAL = re.compile(r"'(?:[^']|'')*'")
 
 
@@ -58,6 +80,9 @@ class SQLReply(BaseModel):
 
 
 REPLY_FORMAT = fireworks.json_schema_format("sql_reply", SQLReply.model_json_schema())
+
+
+NOT_A_QUESTION = "That doesn't look like a question about this database"
 
 
 class ReplyError(ValueError):
@@ -76,6 +101,7 @@ class Config(BaseModel):
     sql_timeout_s: float = 15.0
     max_turns: int = 8  # agent mode: model calls per question
     cache_key: str | None = None  # session affinity for the prompt cache; set per database by make_session
+    dialect: str = "sqlite"  # the connected database; set by make_session
 
 
 class Turn(BaseModel):
@@ -89,6 +115,7 @@ class Turn(BaseModel):
     attempts: int = 1
     usage: Usage = Usage()
     tool_calls: int = 0  # agent mode only
+    declined: bool = False  # the model judged the message not a question about the data
     llm_s: float = 0.0
     sql_s: float = 0.0
     total_s: float = 0.0
@@ -98,19 +125,11 @@ class Turn(BaseModel):
         return self.error is None
 
 
-def connect_readonly(db_path: Path | str = DB_PATH) -> sqlite3.Connection:
-    """Open the database read-only, so no generated query can modify it."""
-    path = Path(db_path).resolve()
-    if not path.exists():
-        raise FileNotFoundError(f"Database not found: {db_path}. Run ./setup.sh first.")
-    return sqlite3.connect(f"{path.as_uri()}?mode=ro", uri=True)
-
-
 def answer(
     question: str,
     *,
     history: tuple[Turn, ...],
-    conn: sqlite3.Connection,
+    engine: Engine,
     briefing: str,
     cfg: Config,
     api_key: str,
@@ -120,7 +139,7 @@ def answer(
     Raises fireworks.FireworksError only if the API is unreachable.
     """
     start = time.perf_counter()
-    messages = build_messages(briefing, history[-cfg.history_turns :], question)
+    messages = build_messages(briefing, history[-cfg.history_turns :], question, cfg.dialect)
     usage, llm_s, sql_s, sql, error = Usage(), 0.0, 0.0, "", ""
 
     for attempt in range(1, cfg.max_repairs + 2):
@@ -135,15 +154,18 @@ def answer(
         usage, llm_s = usage + completion.usage, llm_s + completion.latency_s
         sql_start = time.perf_counter()
         try:
-            sql = guard_sql(parse_reply(completion).sql)
-            columns, rows, truncated = run_sql(conn, sql, timeout_s=cfg.sql_timeout_s, max_rows=cfg.max_rows)
+            reply = parse_reply(completion)
+            if not reply.sql.strip():
+                return declined_turn(question, reply, attempts=attempt, usage=usage, llm_s=llm_s, start=start)
+            sql = guard_sql(reply.sql)
+            columns, rows, truncated = db.query(engine, sql, timeout_s=cfg.sql_timeout_s, max_rows=cfg.max_rows)
             return Turn(
                 question=question, sql=sql, columns=columns, rows=rows, truncated=truncated,
                 attempts=attempt, usage=usage, llm_s=llm_s,
                 sql_s=sql_s + time.perf_counter() - sql_start,
                 total_s=time.perf_counter() - start,
             )  # fmt: skip
-        except (ReplyError, sqlite3.Error) as exc:
+        except (ReplyError, db.QueryError) as exc:
             sql_s += time.perf_counter() - sql_start
             error = str(exc)
             messages = [*messages, *repair_messages(completion.content, error)]
@@ -154,9 +176,18 @@ def answer(
     )  # fmt: skip
 
 
-def build_messages(briefing: str, history: tuple[Turn, ...], question: str) -> list[Message]:
+def declined_turn(question: str, reply: SQLReply, *, attempts: int, usage: Usage, llm_s: float, start: float, tool_calls: int = 0) -> Turn:
+    """No query: the model judged the message not a question about the data. Nothing runs, nothing joins history."""
+    reason = reply.reasoning.strip()
+    return Turn(
+        question=question, sql="", error=f"{NOT_A_QUESTION}: {reason}" if reason else NOT_A_QUESTION, declined=True,
+        attempts=attempts, usage=usage, tool_calls=tool_calls, llm_s=llm_s, total_s=time.perf_counter() - start,
+    )  # fmt: skip
+
+
+def build_messages(briefing: str, history: tuple[Turn, ...], question: str, dialect: str = "sqlite") -> list[Message]:
     """System briefing first (stable, cacheable prefix), then prior turns, then the question."""
-    messages = [Message(role="system", content=SYSTEM_PROMPT + briefing)]
+    messages = [Message(role="system", content=for_dialect(SYSTEM_PROMPT, dialect) + briefing)]
     for turn in history:
         if turn.ok:
             reply = SQLReply(reasoning="", sql=turn.sql).model_dump_json()
@@ -182,7 +213,7 @@ def parse_reply(completion: fireworks.Completion) -> SQLReply:
 
 
 def guard_sql(sql: str) -> str:
-    """Accept a single SELECT/WITH statement. The read-only connection is the real safeguard."""
+    """Accept a single SELECT/WITH statement. The read-only session (db.py) is the real safeguard."""
     cleaned = _strip_code_fences(sql).strip().rstrip(";").strip()
     if not cleaned:
         raise ReplyError("the query was empty")
@@ -194,23 +225,18 @@ def guard_sql(sql: str) -> str:
     return cleaned
 
 
-def run_sql(
-    conn: sqlite3.Connection, sql: str, *, timeout_s: float, max_rows: int
-) -> tuple[tuple[str, ...], tuple[tuple, ...], bool]:
-    """Run a query with a time limit. Returns (columns, rows, truncated)."""
-    deadline = time.monotonic() + timeout_s
-    conn.set_progress_handler(lambda: int(time.monotonic() > deadline), 10_000)
-    try:
-        cursor = conn.execute(sql)
-        columns = tuple(d[0] for d in cursor.description or ())
-        rows = cursor.fetchmany(max_rows + 1)
-    except sqlite3.OperationalError as exc:
-        if "interrupted" in str(exc):
-            raise sqlite3.OperationalError(f"query took longer than {timeout_s:.0f}s and was stopped") from exc
-        raise
-    finally:
-        conn.set_progress_handler(None, 0)
-    return columns, tuple(tuple(r) for r in rows[:max_rows]), len(rows) > max_rows
+def for_dialect(prompt: str, dialect: str) -> str:
+    """The prompt with its SQLite-specific lines replaced for another database. SQLite prompts are unchanged."""
+    if dialect == "sqlite":
+        return prompt
+    name, quoting, dates = DIALECTS.get(dialect) or (
+        dialect,
+        f'{dialect} dialect. Double-quote identifiers that are SQL keywords, e.g. the table "order".',
+        f"For dates use {dialect}'s date functions or ranges such as col >= '1997-01-01'.",
+    )
+    prompt = re.sub(r"(?m)^- SQLite dialect\..*$", f"- {quoting}", prompt)
+    prompt = re.sub(r"(?m)^- Dates are .*$", f"- {dates}", prompt)
+    return prompt.replace("SQLite", name)
 
 
 def _strip_code_fences(text: str) -> str:
@@ -222,27 +248,27 @@ def _strip_code_fences(text: str) -> str:
 #   chat  v0.1: one model call with the full briefing, plus one repair on error
 #   agent        v0.2: a Strands agent that explores the schema with tools, then answers
 #
-# harness.py imports this module, so it is imported inside the functions (and Strands loads only in agent mode).
+# agent.py imports this module, so it is imported inside the functions (and Strands loads only in agent mode).
 
 MODES = ("chat", "agent")
 
 Ask = Callable[[str, tuple[Turn, ...]], Turn]
 
 
-def make_session(cfg: Config, conn: sqlite3.Connection, tables: tuple[Table, ...], api_key: str) -> Ask:
+def make_session(cfg: Config, engine: Engine, tables: tuple[Table, ...], api_key: str) -> Ask:
     """A fresh conversation in the configured mode: ask(question, history) -> Turn. Call again to reset."""
     briefing = render_briefing(tables)
-    cfg = cfg.model_copy(update={"cache_key": cfg.cache_key or cache_key(cfg.mode, briefing)})
+    cfg = cfg.model_copy(update={"dialect": db.dialect(engine), "cache_key": cfg.cache_key or cache_key(cfg.mode, briefing)})
     if cfg.mode == "agent":
-        from src.harness import (  # Strands loads only in agent mode
+        from src.agent import (  # Strands loads only in agent mode
             answer_with_agent,
             build_agent,
         )
 
-        agent = build_agent(tables, cfg, api_key)
-        return lambda question, history: answer_with_agent(agent, question, history=history, conn=conn, cfg=cfg)
+        agent = build_agent(tables, engine, cfg, api_key)
+        return lambda question, history: answer_with_agent(agent, question, history=history, engine=engine, cfg=cfg)
     return lambda question, history: answer(
-        question, history=history, conn=conn, briefing=briefing, cfg=cfg, api_key=api_key
+        question, history=history, engine=engine, briefing=briefing, cfg=cfg, api_key=api_key
     )
 
 
@@ -250,7 +276,7 @@ def cache_key(mode: str, briefing: str) -> str:
     """Same database and mode, same key: every session shares the cached prompt prefix on one replica."""
     prefix = ""
     if mode == "agent":
-        from src.harness import SYSTEM_PROMPT
+        from src.agent import SYSTEM_PROMPT
 
         prefix = SYSTEM_PROMPT
     return hashlib.sha256(f"{mode}\n{prefix}\n{briefing}".encode()).hexdigest()[:16]

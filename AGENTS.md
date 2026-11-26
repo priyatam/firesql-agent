@@ -6,9 +6,9 @@ How to work in this repo. Keep it simple.
 
 1. Write pure functions. Pass data in, return data out.
 2. Use frozen Pydantic models for all data, including JSON and API payloads; no bare dicts in the core. Don't mutate; return a new value with `model_copy(update=...)`.
-3. Keep I/O at the edges. Only `fireworks.py` and the Strands model in `harness.py` touch the network, only `chat.py`, `context.py` and the harness tools touch SQLite (read-only), and only `cli.py` touches the terminal.
+3. Keep I/O at the edges. Only `fireworks.py` and the Strands model in `agent.py` touch the network, only `db.py` opens database connections (read-only; SQLite, PostgreSQL, MySQL, MariaDB), and only `cli.py` touches the terminal.
 4. Prefer the standard library. Add a dependency only when it removes real code.
-5. Small modules, short functions, plain names. The only classes are frozen Pydantic models and exception types: no classes with behavior or mutable state, no inheritance. Share results by returning them (e.g. return `Usage` with the result), never through shared mutable objects. The only framework is Strands, and only for agent mode (`src/harness.py`).
+5. Small modules, short functions, plain names. The only classes are frozen Pydantic models and exception types: no classes with behavior or mutable state, no inheritance. Share results by returning them (e.g. return `Usage` with the result), never through shared mutable objects. The only framework is Strands, and only for agent mode (`src/agent.py`).
 6. Put constants at the top of the module. Pass settings through `Config`, not globals or env lookups deep in the code.
 7. Fail loudly at the edges with a clear message. Don't swallow errors in the core.
 

@@ -7,8 +7,6 @@ import sqlite3
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
-import pandas as pd
-
 # Paths are anchored to the repo, so the CLI and eval work from any directory.
 ROOT = Path(__file__).resolve().parent.parent
 DB_PATH = ROOT / "data" / "financial.sqlite"
@@ -51,39 +49,14 @@ def query_db(
     conn: sqlite3.Connection,
     query: str,
     params: Optional[tuple] = None,
-    return_as_df: bool = True,
-) -> List[Dict[str, Any]] | pd.DataFrame:
-    """
-    Execute a SQL query and return results as a pandas DataFrame or list of dictionaries.
-
-    Args:
-        conn: Active SQLite database connection
-        query: SQL query string to execute
-        params: Optional tuple of parameters for parameterized queries
-        return_as_df: If True, return pandas DataFrame; if False, return list of dicts
-
-    Returns:
-        pd.DataFrame or List[Dict[str, Any]]: Query results
-
-    Raises:
-        sqlite3.Error: If there's an error executing the query
-    """
+) -> List[Dict[str, Any]]:
+    """Execute a SQL query and return rows as a list of dictionaries."""
     try:
-        if return_as_df:
-            return pd.read_sql_query(query, conn, params=params)
-        else:
-            cursor = conn.cursor()
-            if params:
-                cursor.execute(query, params)
-            else:
-                cursor.execute(query)
-
-            columns = [description[0] for description in cursor.description]
-            results = []
-            for row in cursor.fetchall():
-                results.append(dict(zip(columns, row)))
-            return results
-    except (sqlite3.Error, pd.errors.DatabaseError) as e:
+        cursor = conn.cursor()
+        cursor.execute(query, params or ())
+        columns = [description[0] for description in cursor.description]
+        return [dict(zip(columns, row)) for row in cursor.fetchall()]
+    except sqlite3.Error as e:
         raise sqlite3.Error(f"Error executing query: {e}") from e
 
 
@@ -99,15 +72,11 @@ def get_schema(conn: sqlite3.Connection) -> Dict[str, List[Dict[str, str]]]:
     """
     schema: Dict[str, List[Dict[str, str]]] = {}
 
-    tables = query_db(
-        conn,
-        "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name",
-        return_as_df=False,
-    )
+    tables = query_db(conn, "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name")
 
     for table in tables:
         table_name = table["name"]
-        columns = query_db(conn, f'PRAGMA table_info("{table_name}")', return_as_df=False)
+        columns = query_db(conn, f'PRAGMA table_info("{table_name}")')
         schema[table_name] = columns
 
     return schema

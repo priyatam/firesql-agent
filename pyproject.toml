@@ -1,29 +1,22 @@
 [project]
-name = "firetext2sql"
+name = "firesql-agent"
 version = "0.1.0"
 description = "Text-to-SQL agent on Fireworks AI"
 requires-python = ">=3.11"
 license = "Apache-2.0"
 license-files = ["LICENSE"]
 dependencies = [
- "ipython",
- "pandas",
- "pydantic",
- "python-dotenv",
- "sqlalchemy>=2.0",
- "strands-agents[openai]==1.67.0",
+    "psycopg[binary]>=3.2",
+    "pydantic",
+    "pymysql>=1.1",
+    "python-dotenv",
+    "rich>=15.0.0",
+    "sqlalchemy>=2.0",
+    "strands-agents[openai]==1.67.0",
 ]
 
 [project.scripts]
 cli = "src.cli:main"
-
-[project.optional-dependencies]
-postgres = [
-    "psycopg[binary]>=3.2",
-]
-mysql = [
-    "pymysql>=1.1",
-]
 
 [build-system]
 requires = ["hatchling"]
@@ -33,9 +26,7 @@ build-backend = "hatchling.build"
 packages = ["src"]
 
 [dependency-groups]
-dev = [
-    "pytest>=9.2.0",
-]
+dev = ["pytest>=9.2.0"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

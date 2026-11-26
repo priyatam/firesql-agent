@@ -27,18 +27,16 @@ from __future__ import annotations
 import argparse
 import os
 import re
-import sqlite3
 import sys
 from collections import Counter
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import closing
 from typing import Any
 
 from dotenv import find_dotenv, load_dotenv
 from pydantic import BaseModel, ConfigDict, Field, TypeAdapter, ValidationError
 
-from src import fireworks
-from src.chat import ReplyError, SQLReply, connect_readonly, guard_sql, run_sql
+from src import db, fireworks
+from src.chat import ReplyError, SQLReply, guard_sql
 from src.context import build_briefing
 from src.eval import PRICES, Question, rows_match
 from src.fireworks import Message, Usage
@@ -143,8 +141,8 @@ def main() -> None:
     load_dotenv(find_dotenv(usecwd=True))
     args = parse_args()
     api_key = os.environ.get("FIREWORKS_API_KEY") or sys.exit("FIREWORKS_API_KEY is not set.")
-    with closing(connect_readonly()) as conn:
-        briefing = build_briefing(conn)
+    engine = db.connect()
+    briefing = build_briefing(engine)
 
     drafts, usage = generate_questions(briefing, args.target, api_key, args.workers)
     print(f"Phase 1: {len(drafts)} distinct questions  (spend ${cost_usd(usage):.2f})")
@@ -276,9 +274,9 @@ def sample_sql(question: str, briefing: str, api_key: str) -> tuple[SqlSample | 
         return None, Usage()
     try:
         sql = guard_sql(SQLReply.model_validate_json(c.content).sql)
-        with closing(connect_readonly()) as conn:
-            cols, rows, truncated = run_sql(conn, sql, timeout_s=30, max_rows=MAX_ROWS)
-    except (ValidationError, ReplyError, sqlite3.Error):
+        engine = db.connect()
+        cols, rows, truncated = db.query(engine, sql, timeout_s=30, max_rows=MAX_ROWS)
+    except (ValidationError, ReplyError, db.QueryError):
         return None, c.usage
     if not rows or truncated or all(v is None for r in rows for v in r):
         return None, c.usage

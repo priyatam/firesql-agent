@@ -1,7 +1,7 @@
 """Evaluate every mode on the same questions. Run with: uv run python -m src.eval [--set dev|golden|followup|all]
 
 Modes compared:
-  baseline       the naive prompt "Convert this question to SQL: {question}"; no schema, no repair
+  baseline       a naive one-line prompt "Convert this question to SQL: {question}"; no schema, no repair
   chat    v0.1: full briefing, one model call, one repair on error
   agent          v0.2: Strands agent with schema tools; follow-ups see the previous result's rows
   agent-no-rows  agent mode without the previous result's rows (follow-up comparison)
@@ -10,7 +10,7 @@ The followup set is multi-turn: each conversation runs in one session, with the 
 turns as history (as in the CLI), and every turn is scored. The baseline has no history, so it skips it.
 
 A prediction is correct when its rows match the gold query's rows (execution accuracy, as in BIRD).
-Writes eval/report_<set>.json; with the dev set, also dev_answers.json.
+Writes eval/report_<set>.json; with the dev set, also eval/dev_answers.json.
 """
 
 from __future__ import annotations
@@ -18,29 +18,26 @@ from __future__ import annotations
 import argparse
 import os
 import re
-import sqlite3
 import statistics
 import sys
 import time
 from concurrent.futures import ThreadPoolExecutor
-from contextlib import closing
 from datetime import date
 from typing import Any
 
 from dotenv import find_dotenv, load_dotenv
 from pydantic import BaseModel, ConfigDict, TypeAdapter
+from sqlalchemy.engine import Engine
 
-from src import fireworks
+from src import db, fireworks
 from src.chat import (
     DEFAULT_MODEL,
     MODES,
     Config,
     ReplyError,
     Turn,
-    connect_readonly,
     guard_sql,
     make_session,
-    run_sql,
 )
 from src.context import Table, load_tables
 from src.fireworks import Message
@@ -167,14 +164,14 @@ def main() -> None:
     api_key = os.environ.get("FIREWORKS_API_KEY") or sys.exit("FIREWORKS_API_KEY is not set.")
     followup = args.set == "followup"
     modes = args.modes or (FOLLOWUP_MODES if followup else ["baseline", *MODES])
-    with closing(connect_readonly()) as conn:
-        tables = load_tables(conn)
-        if followup:
-            items: list = load_conversations()[: args.limit or None]
-            gold = {f"{c.id}.{i}": gold_rows(conn, t.gold_sql) for c in items for i, t in enumerate(c.turns, 1)}
-        else:
-            items = load_questions(args.set)[: args.limit or None]
-            gold = {q.id: check_gold(conn, q) for q in items}
+    engine = db.connect()  # the bundled SQLite benchmark; gold SQL is written for SQLite
+    tables = load_tables(engine)
+    if followup:
+        items: list = load_conversations()[: args.limit or None]
+        gold = {f"{c.id}.{i}": gold_rows(engine, t.gold_sql) for c in items for i, t in enumerate(c.turns, 1)}
+    else:
+        items = load_questions(args.set)[: args.limit or None]
+        gold = {q.id: check_gold(engine, q) for q in items}
 
     records: list[Record] = []
     for mode in modes:
@@ -213,7 +210,7 @@ def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     p.add_argument("--model", default=os.environ.get("FIREWORKS_MODEL", DEFAULT_MODEL))
     p.add_argument("--workers", type=int, default=8)
     p.add_argument("--limit", type=int, default=0, help="only the first N questions")
-    p.add_argument("--answers-from", default="chat", help="mode whose dev answers go to dev_answers.json")
+    p.add_argument("--answers-from", default="chat", help="mode whose dev answers go to eval/dev_answers.json")
     p.add_argument("--rescore", action="store_true", help="re-grade the saved report's SQL locally; no model calls")
     return p.parse_args(argv)
 
@@ -232,9 +229,9 @@ def rescore(name: str) -> None:
         gold_sql = {f"{c.id}.{i}": t.gold_sql for c in load_conversations() for i, t in enumerate(c.turns, 1)}
     else:
         gold_sql = {q.id: q.gold_sql for q in load_questions(name)}
-    with closing(connect_readonly()) as conn:
-        gold = {qid: gold_rows(conn, sql) for qid, sql in gold_sql.items()}
-        records = [r.model_copy(update={"correct": regrade(conn, r, gold_sql[r.id], gold[r.id])}) for r in report.records]
+    engine = db.connect()
+    gold = {qid: gold_rows(engine, sql) for qid, sql in gold_sql.items()}
+    records = [r.model_copy(update={"correct": regrade(engine, r, gold_sql[r.id], gold[r.id])}) for r in report.records]
     modes = list(report.summary)
     changed = sum(a.correct != b.correct for a, b in zip(report.records, records))
     report = report.model_copy(update={
@@ -247,12 +244,12 @@ def rescore(name: str) -> None:
     print(f"Rescored {path.relative_to(ROOT)}: {changed} records changed")
 
 
-def regrade(conn: sqlite3.Connection, r: Record, gold_sql: str, gold: list[tuple]) -> bool:
+def regrade(engine: Engine, r: Record, gold_sql: str, gold: list[tuple]) -> bool:
     if r.error is not None or not r.sql:
         return False
     try:
-        _, rows, _ = run_sql(conn, guard_sql(r.sql), timeout_s=60, max_rows=Config().max_rows)
-    except (ReplyError, sqlite3.Error):
+        _, rows, _ = db.query(engine, guard_sql(r.sql), timeout_s=60, max_rows=Config().max_rows)
+    except (ReplyError, db.QueryError):
         return False
     return rows_match(rows, gold, ordered=sorts_result(gold_sql))
 
@@ -261,26 +258,26 @@ def load_conversations() -> list[Conversation]:
     return TypeAdapter(list[Conversation]).validate_json(FOLLOWUP_SET.read_text())
 
 
-def gold_rows(conn: sqlite3.Connection, sql: str) -> list[tuple]:
-    _, rows, _ = run_sql(conn, sql, timeout_s=60, max_rows=100_000)
+def gold_rows(engine: Engine, sql: str) -> list[tuple]:
+    _, rows, _ = db.query(engine, sql, timeout_s=60, max_rows=100_000)
     return list(rows)
 
 
-def check_gold(conn: sqlite3.Connection, q: Question) -> list[tuple]:
+def check_gold(engine: Engine, q: Question) -> list[tuple]:
     """Run the gold SQL; when the question carries an expected result, confirm the gold SQL reproduces it."""
-    _, rows, _ = run_sql(conn, q.gold_sql, timeout_s=60, max_rows=100_000)
+    _, rows, _ = db.query(engine, q.gold_sql, timeout_s=60, max_rows=100_000)
     if q.expected_result and not rows_match(rows, [tuple(r.values()) for r in q.expected_result], ordered=False):
         raise SystemExit(f"Gold SQL for {q.id} does not reproduce expected_result")
     return list(rows)
 
 
 def run_one(mode: str, q: Question, cfg: Config, tables: tuple[Table, ...], api_key: str, gold: list[tuple]) -> Record:
-    """One question in a fresh session, on its own connection (SQLite connections are per thread)."""
-    with closing(connect_readonly()) as conn:
-        if mode == "baseline":
-            turn = run_baseline(q.question, conn, cfg, api_key)
-        else:
-            turn = make_session(cfg, conn, tables, api_key)(q.question, ())
+    """One question in a fresh session."""
+    engine = db.connect()
+    if mode == "baseline":
+        turn = run_baseline(q.question, engine, cfg, api_key)
+    else:
+        turn = make_session(cfg, engine, tables, api_key)(q.question, ())
     return to_record(mode, q.id, q.tier, 0, turn, q.gold_sql, gold, cfg.model)
 
 
@@ -289,12 +286,12 @@ def run_conversation(mode: str, conv: Conversation, cfg: Config, tables: tuple[T
     """Every turn of one conversation in one session, with the model's own earlier turns as history."""
     records: list[Record] = []
     history: tuple[Turn, ...] = ()
-    with closing(connect_readonly()) as conn:
-        ask = make_session(cfg, conn, tables, api_key)
-        for n, t in enumerate(conv.turns, 1):
-            turn = ask(t.question, history)
-            history = (*history, turn)
-            records.append(to_record(mode, f"{conv.id}.{n}", conv.tier, n, turn, t.gold_sql, gold[f"{conv.id}.{n}"], cfg.model))
+    engine = db.connect()
+    ask = make_session(cfg, engine, tables, api_key)
+    for n, t in enumerate(conv.turns, 1):
+        turn = ask(t.question, history)
+        history = (*history, turn)
+        records.append(to_record(mode, f"{conv.id}.{n}", conv.tier, n, turn, t.gold_sql, gold[f"{conv.id}.{n}"], cfg.model))
     return records
 
 
@@ -319,15 +316,15 @@ def sorts_result(sql: str) -> bool:
     return bool(ORDER_BY.search(sql))
 
 
-def run_baseline(question: str, conn: sqlite3.Connection, cfg: Config, api_key: str) -> Turn:
+def run_baseline(question: str, engine: Engine, cfg: Config, api_key: str) -> Turn:
     """A naive baseline: one bare prompt, take the SQL as-is, no schema, no retry."""
     start = time.perf_counter()
     c = fireworks.chat([Message(role="user", content=BASELINE_PROMPT.format(question=question))],
                        model=cfg.model, api_key=api_key, reasoning_effort=cfg.reasoning_effort)
     sql, t = extract_sql(c.content), time.perf_counter()
     try:
-        columns, rows, truncated = run_sql(conn, guard_sql(sql), timeout_s=cfg.sql_timeout_s, max_rows=cfg.max_rows)
-    except (ReplyError, sqlite3.Error) as exc:
+        columns, rows, truncated = db.query(engine, guard_sql(sql), timeout_s=cfg.sql_timeout_s, max_rows=cfg.max_rows)
+    except (ReplyError, db.QueryError) as exc:
         return Turn(question=question, sql=sql, error=str(exc), usage=c.usage, llm_s=c.latency_s,
                     sql_s=time.perf_counter() - t, total_s=time.perf_counter() - start)
     return Turn(question=question, sql=sql, columns=columns, rows=rows, truncated=truncated, usage=c.usage,
@@ -430,7 +427,7 @@ def _conversations(recs: list[Record]) -> str:
 
 def write_dev_answers(recs: list[Record]) -> None:
     answers = {r.id: DevAnswer(sql=r.sql, answer=r.answer) for r in recs}
-    (ROOT / "dev_answers.json").write_text(TypeAdapter(dict[str, DevAnswer]).dump_json(answers, indent=2).decode() + "\n")
+    (ROOT / "eval" / "dev_answers.json").write_text(TypeAdapter(dict[str, DevAnswer]).dump_json(answers, indent=2).decode() + "\n")
 
 
 if __name__ == "__main__":

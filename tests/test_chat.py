@@ -45,3 +45,20 @@ def test_parse_completion_reads_usage_and_rejects_bad_shapes():
     assert c.usage == Usage(prompt_tokens=5, completion_tokens=2, cached_tokens=3)
     with pytest.raises(FireworksError):
         _parse_completion({"error": "x"}, 0)
+
+
+def test_empty_sql_reply_is_declined_without_running_or_repairing(monkeypatch):
+    from src import chat, fireworks
+
+    calls = []
+
+    def fake_chat(messages, **kw):
+        calls.append(messages)
+        return Completion(content='{"reasoning": "That is gibberish.", "sql": ""}', finish_reason="stop", usage=Usage(), latency_s=0)
+
+    monkeypatch.setattr(fireworks, "chat", fake_chat)
+    monkeypatch.setattr(chat.db, "query", lambda *a, **k: (_ for _ in ()).throw(AssertionError("SQL must not run")))
+    prev = chat.Turn(question="How many accounts?", sql="SELECT COUNT(*) FROM account", columns=("n",), rows=((4500,),))
+    turn = chat.answer("asdkj qwpeoi", history=(prev,), engine=None, briefing="b", cfg=chat.Config(), api_key="k")
+    assert turn.declined and not turn.ok and turn.sql == "" and turn.rows == ()
+    assert "gibberish" in turn.error and len(calls) == 1

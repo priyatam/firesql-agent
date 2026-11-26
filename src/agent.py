@@ -1,7 +1,7 @@
 """Agent mode (v0.2): a Strands agent that explores the schema with tools before answering.
 
 One fixed path: prompt -> write SQL -> test it once with run_sql -> final {reasoning, sql}.
-The harness then runs the final SQL itself, so agent mode returns the same Turn as chat mode.
+This module then runs the final SQL itself, so agent mode returns the same Turn as chat mode.
 While the full briefing fits (MAX_BRIEFING_CHARS), it goes in the cached system prompt, so the agent
 needs no schema lookups. Larger schemas get the compact outline, and the agent fetches column notes
 and coded values with tools on demand.
@@ -10,27 +10,28 @@ and coded values with tools on demand.
 from __future__ import annotations
 
 import logging
-import sqlite3
 import time
 from collections.abc import Callable
-from contextlib import closing
 from typing import Any
 
+import sqlalchemy as sa
 from pydantic import BaseModel, ConfigDict
+from sqlalchemy.engine import Engine
 from strands import Agent, tool
 from strands.models.openai import OpenAIModel
 from strands.types.agent import Limits
 
+from src import db
 from src.chat import (
     Config,
     ReplyError,
     SQLReply,
     Turn,
-    connect_readonly,
+    declined_turn,
+    for_dialect,
     guard_sql,
-    run_sql,
 )
-from src.context import Table, render_briefing, render_outline, render_table
+from src.context import Table, qualified, render_briefing, render_outline, render_table
 from src.fireworks import Usage
 
 BASE_URL = "https://api.fireworks.ai/inference/v1"
@@ -48,6 +49,8 @@ How to work:
 shown, call describe_table; only if a value you need is not listed, call sample_values.
 2. Test the query once with run_sql. If it errors or the result looks wrong, fix it and test again.
 3. Finish with the final query as {"reasoning": "<one or two short sentences>", "sql": "<query>"}.
+   If the message is not a question about this data (gibberish, a greeting, an unrelated request), don't call \
+tools: finish with "sql" as an empty string and say why in "reasoning". Never repeat the previous query unless asked.
 
 Rules:
 - Use only tables and columns that exist. Never invent names.
@@ -87,13 +90,13 @@ def build_model(cfg: Config, api_key: str) -> OpenAIModel:
     return OpenAIModel(client_args=client_args, model_id=cfg.model, params=params)
 
 
-def build_tools(tables: tuple[Table, ...], cfg: Config) -> list:
-    """Read-only tools. Strands runs tools on worker threads, so each call opens its own connection."""
-    by_name = {t.name: t for t in tables}
+def build_tools(tables: tuple[Table, ...], engine: Engine, cfg: Config) -> list:
+    """Read-only tools. Strands runs tools on worker threads; the engine hands each call its own connection."""
+    by_name = {**{t.name: t for t in tables}, **{qualified(t): t for t in tables}}
+    find = lambda name: by_name.get(name.strip().replace('"', "").replace("`", ""))
 
     def query(sql: str, max_rows: int):
-        with closing(connect_readonly()) as conn:
-            return run_sql(conn, sql, timeout_s=cfg.sql_timeout_s, max_rows=max_rows)
+        return db.query(engine, sql, timeout_s=cfg.sql_timeout_s, max_rows=max_rows)
 
     @tool
     def list_tables() -> str:
@@ -103,16 +106,18 @@ def build_tools(tables: tuple[Table, ...], cfg: Config) -> list:
     @tool
     def describe_table(table: str) -> str:
         """Column meanings, notes, stored formats and the full list of values for coded columns of one table."""
-        t = by_name.get(table.strip().strip('"'))
-        return render_table(t) if t else f"No table named {table!r}. Tables: {', '.join(by_name)}"
+        t = find(table)
+        return render_table(t) if t else f"No table named {table!r}. Tables: {', '.join(qualified(t) for t in tables)}"
 
     @tool
     def sample_values(table: str, column: str, limit: int = 20) -> str:
         """The most common distinct stored values of one column, with counts."""
-        t = by_name.get(table.strip().strip('"'))
+        t = find(table)
         if t is None or column not in {c.name for c in t.columns}:
             return f"No column {column!r} in table {table!r}."
-        sql = f'SELECT "{column}", COUNT(*) AS n FROM "{t.name}" GROUP BY 1 ORDER BY n DESC LIMIT {max(1, min(limit, 100))}'
+        col = sa.column(column)
+        n = sa.func.count().label("n")
+        sql = sa.select(col, n).select_from(sa.table(t.name, col, schema=t.schema_name)).group_by(col).order_by(n.desc()).limit(max(1, min(limit, 100)))
         _, rows, _ = query(sql, 100)
         return "\n".join(f"{v!r}: {n:,}" for v, n in rows)
 
@@ -121,7 +126,7 @@ def build_tools(tables: tuple[Table, ...], cfg: Config) -> list:
         """Run one read-only SELECT and see the first rows, or the error. Use it to test your query."""
         try:
             columns, rows, truncated = query(guard_sql(sql), TOOL_ROWS)
-        except (ReplyError, sqlite3.Error) as exc:
+        except (ReplyError, db.QueryError) as exc:
             return f"Error: {exc}"
         more = " (more rows not shown)" if truncated else ""
         return "\n".join([" | ".join(columns), *(" | ".join(map(str, r)) for r in rows)]) + f"\n({len(rows)} rows{more})"
@@ -129,12 +134,12 @@ def build_tools(tables: tuple[Table, ...], cfg: Config) -> list:
     return [list_tables, describe_table, sample_values, run_sql_tool]
 
 
-def build_agent(tables: tuple[Table, ...], cfg: Config, api_key: str) -> Agent:
+def build_agent(tables: tuple[Table, ...], engine: Engine, cfg: Config, api_key: str) -> Agent:
     """One agent per conversation; it keeps its own message history for follow-ups."""
     return Agent(
         model=build_model(cfg, api_key),
-        system_prompt=SYSTEM_PROMPT + schema_for_prompt(tables),
-        tools=build_tools(tables, cfg),
+        system_prompt=for_dialect(SYSTEM_PROMPT, cfg.dialect) + schema_for_prompt(tables),
+        tools=build_tools(tables, engine, cfg),
         callback_handler=None,
     )
 
@@ -160,7 +165,7 @@ def usage_snapshot(agent: Agent) -> AgentUsage:
 def followup_prompt(question: str, history: tuple[Turn, ...], max_rows: int) -> str:
     """The question, preceded by the previous answer's rows, so a follow-up can refer to results ("the third one").
 
-    The agent already remembers earlier questions and its SQL; only the rows the harness ran are new to it.
+    The agent already remembers earlier questions and its SQL; only the rows this module ran are new to it.
     """
     last = history[-1] if history else None
     if max_rows <= 0 or last is None or not last.ok:
@@ -176,7 +181,7 @@ def answer_with_agent(
     question: str,
     *,
     history: tuple[Turn, ...] = (),
-    conn: sqlite3.Connection,
+    engine: Engine,
     cfg: Config,
     call: Callable[[Agent, str], Any] | None = None,
 ) -> Turn:
@@ -184,13 +189,16 @@ def answer_with_agent(
     start, before = time.perf_counter(), usage_snapshot(agent)
     limits = Limits(turns=cfg.max_turns, structured_output_attempts=2)
     invoke = call or (lambda a, q: a(q, structured_output_model=SQLReply, limits=limits))
-    sql, error = "", None
+    sql, error, declined = "", None, None
     try:
         result = invoke(agent, followup_prompt(question, history, cfg.history_rows))
         reply = result.structured_output
         if not isinstance(reply, SQLReply):
             raise ReplyError("the agent finished without a final query")
-        sql = guard_sql(reply.sql)
+        if not reply.sql.strip():
+            declined = reply
+        else:
+            sql = guard_sql(reply.sql)
     except Exception as exc:  # noqa: BLE001  limit or structured-output failure: report it as the turn's error
         error = f"{type(exc).__name__}: {exc}" if not isinstance(exc, ReplyError) else str(exc)
     llm_s = time.perf_counter() - start
@@ -201,13 +209,15 @@ def answer_with_agent(
         cached_tokens=after.cached_tokens - before.cached_tokens,
     )
     tool_calls, cycles = after.tool_calls - before.tool_calls, after.cycles - before.cycles
+    if declined is not None:
+        return declined_turn(question, declined, attempts=cycles, usage=usage, llm_s=llm_s, start=start, tool_calls=tool_calls)
     if error:
         return Turn(question=question, sql=sql, error=error, attempts=cycles, usage=usage, tool_calls=tool_calls,
                     llm_s=llm_s, total_s=time.perf_counter() - start)
     sql_start = time.perf_counter()
     try:
-        columns, rows, truncated = run_sql(conn, sql, timeout_s=cfg.sql_timeout_s, max_rows=cfg.max_rows)
-    except sqlite3.Error as exc:
+        columns, rows, truncated = db.query(engine, sql, timeout_s=cfg.sql_timeout_s, max_rows=cfg.max_rows)
+    except db.QueryError as exc:
         return Turn(question=question, sql=sql, error=str(exc), attempts=cycles, usage=usage, tool_calls=tool_calls,
                     llm_s=llm_s, sql_s=time.perf_counter() - sql_start, total_s=time.perf_counter() - start)
     return Turn(question=question, sql=sql, columns=columns, rows=rows, truncated=truncated, attempts=cycles,

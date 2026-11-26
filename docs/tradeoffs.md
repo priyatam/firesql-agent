@@ -26,7 +26,7 @@ A query that runs and returns wrong or empty rows is not retried. Catching that 
 
 | Option | Pro | Con |
 |---|---|---|
-| Nothing (naive baseline) | Smallest prompt | Hallucinated tables and columns, the main failure of naive text-to-SQL |
+| Nothing (naive baseline) | Smallest prompt | Hallucinated tables and columns |
 | **Full schema, docs and values in the prompt (chosen)** | Simple; nothing to miss; a stable prefix that caches well | Prompt grows with the schema; fine for 8 tables, not for 500 |
 | Retrieval over columns (embeddings) | Scales to wide schemas | Can miss a needed column; another call and more latency |
 | Schema-exploration tools (`list_tables`, `sample_values`) | The model looks up only what it needs | Several round trips per question |
@@ -35,7 +35,9 @@ BIRD's own finding backs this choice: missing value and domain knowledge is the 
 
 > **Measured (v0.2):** agent mode adds the exploration-tools option. Its prompt holds a compact outline of 1,281 characters, against 6,847 for the full briefing, and it fetches notes and values with `describe_table` and `sample_values` (3.1 tool calls per question). On this 8-table database it scored 82% against 86% for the full briefing, at twice the cost. Seeing sample values made it add filters the question didn't ask for. While the schema fits in one prompt, the full briefing wins. Tools are the path for schemas that don't fit.
 >
-> **Update when:** retrieval is added, or the CLI accepts a connection string for another database.
+> **Measured (v0.3):** the CLI now accepts a connection string (`--db-url`) for SQLite, PostgreSQL, MySQL or MariaDB, and builds the same briefing from any of them through SQLAlchemy. On a PostgreSQL copy of the bank, both modes scored 9/10 on the dev set. Column notes for your database come from `--docs-dir` CSVs (one per table, in the BIRD format) or, failing that, the database's own column comments; tables and views in any `--schema` are included.
+>
+> **Update when:** retrieval is added.
 
 ## 3. What are the trade-offs between different agent architectures for this problem?
 

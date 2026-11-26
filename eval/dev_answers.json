@@ -1,26 +1,26 @@
 {
   "q_001": {
-    "sql": "SELECT COUNT(*) FROM account a JOIN district d ON a.district_id = d.district_id WHERE d.A3 = 'Prague'",
-    "answer": "COUNT(*) = 554"
+    "sql": "SELECT COUNT(DISTINCT a.account_id) FROM account a JOIN district d ON a.district_id = d.district_id WHERE d.A3 = 'Prague'",
+    "answer": "COUNT(DISTINCT a.account_id) = 554"
   },
   "q_002": {
-    "sql": "SELECT SUM(amount) AS total_amount FROM loan WHERE status = 'A'",
-    "answer": "total_amount = 18603216"
+    "sql": "SELECT SUM(amount) AS total_approved_amount FROM loan WHERE status = 'A'",
+    "answer": "total_approved_amount = 18603216"
   },
   "q_003": {
-    "sql": "SELECT COUNT(*) AS owner_count FROM \"disp\" WHERE type = 'OWNER'",
-    "answer": "owner_count = 4500"
+    "sql": "SELECT COUNT(*) FROM disp WHERE type = 'OWNER'",
+    "answer": "COUNT(*) = 4500"
   },
   "q_004": {
     "sql": "SELECT AVG(payments) AS avg_monthly_payment FROM loan",
     "answer": "avg_monthly_payment = 4190.6642228739"
   },
   "q_005": {
-    "sql": "SELECT COUNT(DISTINCT c.client_id) AS female_clients FROM client c JOIN district d ON c.district_id = d.district_id WHERE c.gender = 'F' AND CAST(d.A11 AS INTEGER) > 10000",
-    "answer": "female_clients = 636"
+    "sql": "SELECT COUNT(*) FROM client c JOIN district d ON c.district_id = d.district_id WHERE c.gender = 'F' AND d.A11 > 10000",
+    "answer": "COUNT(*) = 636"
   },
   "q_006": {
-    "sql": "SELECT COUNT(DISTINCT d.client_id) FROM disp d JOIN account a ON d.account_id = a.account_id JOIN district di ON a.district_id = di.district_id WHERE d.type = 'OWNER' AND di.A3 = 'Prague'",
+    "sql": "SELECT COUNT(DISTINCT d.client_id) FROM disp d JOIN account a ON a.account_id = d.account_id JOIN district r ON r.district_id = a.district_id WHERE d.type = 'OWNER' AND r.A3 = 'Prague'",
     "answer": "COUNT(DISTINCT d.client_id) = 554"
   },
   "q_007": {
@@ -28,11 +28,11 @@
     "answer": "total_amount = 96418"
   },
   "q_008": {
-    "sql": "SELECT d.A2 AS district_name, COUNT(DISTINCT cl.client_id) AS owner_count FROM disp dp JOIN account a ON dp.account_id = a.account_id JOIN district d ON a.district_id = d.district_id JOIN client cl ON dp.client_id = cl.client_id WHERE dp.type = 'OWNER' AND d.A3 = 'south Moravia' GROUP BY d.A2 ORDER BY owner_count DESC",
+    "sql": "SELECT d.A2 AS district_name, COUNT(DISTINCT cl.client_id) AS owner_count FROM disp dp JOIN client cl ON cl.client_id = dp.client_id JOIN account a ON a.account_id = dp.account_id JOIN district d ON d.district_id = a.district_id WHERE dp.type = 'OWNER' AND d.A3 = 'south Moravia' GROUP BY d.A2 ORDER BY owner_count DESC",
     "answer": "14 rows: district_name=Brno - mesto, owner_count=128; district_name=Zlin, owner_count=92; district_name=Kromeriz, owner_count=57; district_name=Zdar nad Sazavou, owner_count=53; district_name=Brno - venkov, owner_count=53 ..."
   },
   "q_009": {
-    "sql": "SELECT c.client_id, c.gender, SUM(l.amount) AS total_loan_amount FROM disp d JOIN client c ON c.client_id = d.client_id JOIN loan l ON l.account_id = d.account_id WHERE d.type = 'OWNER' GROUP BY c.client_id, c.gender ORDER BY total_loan_amount DESC LIMIT 5",
+    "sql": "SELECT c.client_id, c.gender, SUM(l.amount) AS total_loan_amount FROM client c JOIN disp d ON d.client_id = c.client_id AND d.type = 'OWNER' JOIN loan l ON l.account_id = d.account_id GROUP BY c.client_id, c.gender ORDER BY total_loan_amount DESC LIMIT 5",
     "answer": "5 rows: client_id=9340, gender=M, total_loan_amount=590820; client_id=10997, gender=F, total_loan_amount=566640; client_id=2823, gender=F, total_loan_amount=541200; client_id=981, gender=M, total_loan_amount=538500; client_id=3546, gender=M, total_loan_amount=504000"
   },
   "q_010": {

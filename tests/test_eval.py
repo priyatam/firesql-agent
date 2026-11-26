@@ -58,15 +58,14 @@ def test_verify_keeps_a_question_only_when_two_samples_agree(monkeypatch):
 
 
 def test_followup_set_gold_queries_run_and_return_rows():
-    from contextlib import closing
 
-    from src.chat import connect_readonly
+    from src import db
     from src.eval import gold_rows, load_conversations
 
     conversations = load_conversations()
     assert len(conversations) >= 15 and all(len(c.turns) >= 3 for c in conversations)
-    with closing(connect_readonly()) as conn:
-        assert all(gold_rows(conn, t.gold_sql) for c in conversations for t in c.turns)
+    engine = db.connect()
+    assert all(gold_rows(engine, t.gold_sql) for c in conversations for t in c.turns)
 
 
 def test_summary_scores_turns_and_whole_conversations():

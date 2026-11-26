@@ -19,15 +19,15 @@ digraph firetext2sql {
     subgraph cluster_modes {
       label="modes"; style="dashed,rounded"; color="#3b6fb6"; fontcolor="#3b6fb6"; fontsize=12; penwidth=1.6; margin=14;
       chat    [group=g2, label=<<b>chat mode</b> (v0.1) · chat.py<br/><font point-size="10">full briefing · 1 LLM call<br/>repair once on error</font>>, fillcolor="#e8f1ff", color="#3b6fb6", width=2.9, height=1.0];
-      harness [group=g4, label=<<b>agent mode</b> (v0.2) · harness.py<br/><font point-size="10">Strands loop · full briefing + tools<br/>tests its SQL · ≤ 8 LLM calls</font>>, fillcolor="#e8f1ff", color="#3b6fb6", width=2.9, height=1.0];
+      agentmode [group=g4, label=<<b>agent mode</b> (v0.2) · agent.py<br/><font point-size="10">Strands loop · full briefing + tools<br/>tests its SQL · ≤ 8 LLM calls</font>>, fillcolor="#e8f1ff", color="#3b6fb6", width=2.9, height=1.0];
     }
 
-    guard   [group=g2, label=<<b>SQL guard</b><br/><font point-size="10">one SELECT · read-only · 15s</font>>, fillcolor="#fff6e5", color="#c48a1c"];
+    guard   [group=g2, label=<<b>SQL guard · db.py</b><br/><font point-size="10">one SELECT · read-only session · 15s</font>>, fillcolor="#fff6e5", color="#c48a1c"];
     tools   [group=g4, label=<<b>agent tools</b><br/><font point-size="10">list_tables · describe_table<br/>sample_values · run_sql</font>>, fillcolor="#fff6e5", color="#c48a1c"];
     strands [group=g5, label=<<b>Strands OpenAIModel</b><br/><font point-size="10">model client · session affinity</font>>];
   }
 
-  db [group=g2, label=<<b>financial.sqlite</b><br/><font point-size="10">8 tables · opened read-only</font>>, shape=cylinder, fillcolor="#f4faf4", color="#6a9f6a"];
+  db [group=g2, label=<<b>SQL database</b> (--db-url)<br/><font point-size="10">SQLite (default: financial.sqlite)<br/>PostgreSQL · MySQL · MariaDB</font>>, shape=cylinder, fillcolor="#f4faf4", color="#6a9f6a"];
 
   subgraph cluster_fw {
     label="Fireworks AI  (serverless)"; style="rounded,filled"; fillcolor="#fbf4fb"; color="#cfa9cf"; fontcolor="#33414f"; fontsize=12;
@@ -37,7 +37,7 @@ digraph firetext2sql {
 
   {rank=same; user; docs}
   {rank=same; cli; context}
-  {rank=same; chat; harness; strands}
+  {rank=same; chat; agentmode; strands}
   {rank=same; fwc; guard; tools}
 
   // ordering helpers
@@ -51,12 +51,12 @@ digraph firetext2sql {
   // each question
   user -> cli;
   cli -> chat;
-  cli -> harness;
+  cli -> agentmode;
   chat -> fwc;
   chat -> guard;
-  harness -> tools;
+  agentmode -> tools;
   tools -> guard [constraint=false];
-  harness -> strands [constraint=false];
+  agentmode -> strands [constraint=false];
   guard -> db;
   fwc -> api;
   strands -> api;
@@ -64,6 +64,6 @@ digraph firetext2sql {
 
   // once at startup
   docs -> context [style=dashed, dir=forward];
-  context -> harness [style=dashed, dir=forward];
+  context -> agentmode [style=dashed, dir=forward];
   context -> chat [style=dashed, dir=forward];
 }
