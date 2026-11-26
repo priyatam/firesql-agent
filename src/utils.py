@@ -1,3 +1,7 @@
+"""Shared helpers: project paths, and the database and column-doc loaders."""
+
+from __future__ import annotations
+
 import csv
 import sqlite3
 from pathlib import Path
@@ -5,8 +9,13 @@ from typing import Any, Dict, List, Optional
 
 import pandas as pd
 
-DEFAULT_DB_PATH = "data/financial.sqlite"
-DEFAULT_DESCRIPTION_DIR = "data/database_description"
+# Paths are anchored to the repo, so the CLI and eval work from any directory.
+ROOT = Path(__file__).resolve().parent.parent
+DB_PATH = ROOT / "data" / "financial.sqlite"
+DOCS_DIR = ROOT / "data" / "database_description"
+
+DEFAULT_DB_PATH = str(DB_PATH)
+DEFAULT_DESCRIPTION_DIR = str(DOCS_DIR)
 
 
 def load_db(db_path: str = DEFAULT_DB_PATH) -> sqlite3.Connection:

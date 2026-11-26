@@ -1,56 +1,69 @@
 // Render: dot -Tpng -Gdpi=200 docs/architecture.dot -o docs/architecture.png
 digraph firetext2sql {
   graph [rankdir=TB, splines=ortho, newrank=true, fontname="Helvetica", fontsize=14, bgcolor="white",
-         pad=0.4, nodesep=0.6, ranksep=0.7, labelloc=t, labeljust=l,
-         label=<<b>firetext2sql v0.1</b>    <font point-size="11" color="#5b6b7f">solid = each question · dashed = once at startup</font>>];
+         pad=0.4, nodesep=0.45, ranksep=0.55, labelloc=t, labeljust=l,
+         label=<<b>firetext2sql</b>    <font point-size="11" color="#5b6b7f">solid = each question · dashed = once at startup</font>>];
   node  [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=12, color="#5b6b7f", fillcolor="#ffffff",
-         penwidth=1.3, width=2.6, height=0.85, fixedsize=true];
+         penwidth=1.3, width=2.5, height=0.85, fixedsize=true];
   edge  [color="#5b6b7f", penwidth=1.3, arrowsize=0.7, dir=both];
 
-  user [label="User\n(terminal)", shape=oval, fillcolor="#eef2f7", width=1.6];
+  user [group=g2, label="User\n(terminal)", shape=oval, fillcolor="#eef2f7", width=1.6];
+  docs [group=g4, label=<<b>database_description/</b><br/><font point-size="10">column-doc CSVs</font>>, shape=folder, fillcolor="#f4faf4", color="#6a9f6a"];
 
   subgraph cluster_app {
     label="firetext2sql  (local Python)"; style="rounded,filled"; fillcolor="#f6f8fb"; color="#b8c4d3"; fontcolor="#33414f"; fontsize=12;
-    cli     [group=c1, label=<<b>cli.py</b><br/><font point-size="10">REPL · SQL, results, timings</font>>];
-    agent   [group=c2, label=<<b>agent.py</b><br/><font point-size="10">generate → guard → run<br/>retry once on error</font>>, fillcolor="#e8f1ff", color="#3b6fb6"];
-    fwc     [group=c3, label=<<b>fireworks.py</b><br/><font point-size="10">HTTPS client · usage, latency</font>>];
-    context [group=c1, label=<<b>context.py</b><br/><font point-size="10">briefing: schema, notes, values</font>>];
-    guard   [group=c2, label=<<b>SQL guard</b><br/><font point-size="10">one SELECT · read-only · 15s</font>>, fillcolor="#fff6e5", color="#c48a1c"];
+    cli     [group=g2, label=<<b>cli.py</b><br/><font point-size="10">REPL · --chat | --agent · results</font>>];
+    context [group=g4, label=<<b>context.py</b><br/><font point-size="10">briefing · outline · notes, values</font>>];
+    fwc     [group=g1, label=<<b>fireworks.py</b><br/><font point-size="10">HTTPS client · session affinity</font>>];
+
+    subgraph cluster_modes {
+      label="modes"; style="dashed,rounded"; color="#3b6fb6"; fontcolor="#3b6fb6"; fontsize=12; penwidth=1.6; margin=14;
+      chat    [group=g2, label=<<b>chat mode</b> (v0.1) · chat.py<br/><font point-size="10">full briefing · 1 LLM call<br/>repair once on error</font>>, fillcolor="#e8f1ff", color="#3b6fb6", width=2.9, height=1.0];
+      harness [group=g4, label=<<b>agent mode</b> (v0.2) · harness.py<br/><font point-size="10">Strands loop · full briefing + tools<br/>tests its SQL · ≤ 8 LLM calls</font>>, fillcolor="#e8f1ff", color="#3b6fb6", width=2.9, height=1.0];
+    }
+
+    guard   [group=g2, label=<<b>SQL guard</b><br/><font point-size="10">one SELECT · read-only · 15s</font>>, fillcolor="#fff6e5", color="#c48a1c"];
+    tools   [group=g4, label=<<b>agent tools</b><br/><font point-size="10">list_tables · describe_table<br/>sample_values · run_sql</font>>, fillcolor="#fff6e5", color="#c48a1c"];
+    strands [group=g5, label=<<b>Strands OpenAIModel</b><br/><font point-size="10">model client · session affinity</font>>];
   }
 
-  subgraph cluster_data {
-    label="Local data"; style="rounded,filled"; fillcolor="#f4faf4"; color="#a9cfa9"; fontcolor="#33414f"; fontsize=12;
-    docs [group=c1, label=<<b>database_description/</b><br/><font point-size="10">column-doc CSVs</font>>, shape=folder];
-    db   [group=c2, label=<<b>financial.sqlite</b><br/><font point-size="10">8 tables</font>>, shape=cylinder];
-  }
+  db [group=g2, label=<<b>financial.sqlite</b><br/><font point-size="10">8 tables · opened read-only</font>>, shape=cylinder, fillcolor="#f4faf4", color="#6a9f6a"];
 
   subgraph cluster_fw {
-    label="Fireworks AI  (serverless)"; labeljust=r; style="rounded,filled"; fillcolor="#fbf4fb"; color="#cfa9cf"; fontcolor="#33414f"; fontsize=12;
-    api   [group=c3, label=<<b>chat/completions</b><br/><font point-size="10">prompt cache</font>>];
-    model [label=<<b>glm-5p3-flash</b><br/><font point-size="10">JSON {reasoning, sql}</font>>, fillcolor="#f3e8ff", color="#7a4fb3"];
+    label="Fireworks AI  (serverless)"; style="rounded,filled"; fillcolor="#fbf4fb"; color="#cfa9cf"; fontcolor="#33414f"; fontsize=12;
+    api   [group=g2, label=<<b>chat/completions</b><br/><font point-size="10">prompt cache</font>>];
+    model [group=g2, label=<<b>glm-5p3-flash</b><br/><font point-size="10">tool calls · JSON {reasoning, sql}</font>>, fillcolor="#f3e8ff", color="#7a4fb3"];
   }
 
-  // rows
-  {rank=same; user; cli; agent; fwc}
-  {rank=same; context -> guard [style=invis, dir=none]}
-  {rank=same; docs -> db -> api -> model [style=invis, dir=none]}
+  {rank=same; user; docs}
+  {rank=same; cli; context}
+  {rank=same; chat; harness; strands}
+  {rank=same; fwc; guard; tools}
+
+  // ordering helpers
+  user -> docs [style=invis, dir=none];
   cli -> context [style=invis, dir=none];
-  context -> docs [style=invis, dir=none, weight=10];
-  agent -> guard [style=invis, dir=none, weight=10];
+  fwc -> guard -> tools [style=invis, dir=none];
   guard -> db [style=invis, dir=none, weight=10];
-  fwc -> api [style=invis, dir=none, weight=10];
+  db -> api [style=invis, dir=none];
+  fwc -> db [style=invis, dir=none];
 
   // each question
-  user  -> cli;
-  cli   -> agent;
-  agent -> fwc;
-  fwc   -> api;
-  agent -> guard;
+  user -> cli;
+  cli -> chat;
+  cli -> harness;
+  chat -> fwc;
+  chat -> guard;
+  harness -> tools;
+  tools -> guard [constraint=false];
+  harness -> strands [constraint=false];
   guard -> db;
-
+  fwc -> api;
+  strands -> api;
   api -> model;
 
   // once at startup
-  context -> agent [style=dashed, dir=forward];
-  context -> docs  [style=dashed, dir=back];
+  docs -> context [style=dashed, dir=forward];
+  context -> harness [style=dashed, dir=forward];
+  context -> chat [style=dashed, dir=forward];
 }

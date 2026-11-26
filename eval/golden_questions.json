@@ -1,0 +1,3204 @@
+[
+  {
+    "id": "g_001",
+    "question": "What is the average 1996 unemployment rate across the districts in the east Bohemia region? Return a single number.",
+    "tier": 1,
+    "gold_sql": "SELECT AVG(A13) FROM district WHERE A3 = 'east Bohemia'",
+    "expected_result": [
+      {
+        "AVG(A13)": 2.983636363636364
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_002",
+    "question": "List the names of all districts in the south Bohemia region in alphabetical order.",
+    "tier": 1,
+    "gold_sql": "SELECT A2 AS district_name FROM district WHERE A3 = 'south Bohemia' ORDER BY A2 ASC",
+    "expected_result": [
+      {
+        "district_name": "Ceske Budejovice"
+      },
+      {
+        "district_name": "Cesky Krumlov"
+      },
+      {
+        "district_name": "Jindrichuv Hradec"
+      },
+      {
+        "district_name": "Pelhrimov"
+      },
+      {
+        "district_name": "Pisek"
+      },
+      {
+        "district_name": "Prachatice"
+      },
+      {
+        "district_name": "Strakonice"
+      },
+      {
+        "district_name": "Tabor"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_003",
+    "question": "How many districts have at least one account? Return a single count.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(DISTINCT district_id) AS district_count FROM account",
+    "expected_result": [
+      {
+        "district_count": 77
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_004",
+    "question": "How many clients are women? Return a single count.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(*) AS female_clients FROM client WHERE gender = 'F'",
+    "expected_result": [
+      {
+        "female_clients": 2645
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_005",
+    "question": "What percentage of all clients are men? Return one percentage rounded to two decimal places.",
+    "tier": 1,
+    "gold_sql": "SELECT ROUND(100.0 * SUM(CASE WHEN gender = 'M' THEN 1 ELSE 0 END) / COUNT(*), 2) AS men_percentage FROM client",
+    "expected_result": [
+      {
+        "men_percentage": 50.74
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_006",
+    "question": "Which gender group has more clients, women or men, and by how many? Return the group name and the difference in counts; if the counts are equal, return 'tie' and 0.",
+    "tier": 1,
+    "gold_sql": "SELECT CASE WHEN SUM(gender = 'F') > SUM(gender = 'M') THEN 'women' WHEN SUM(gender = 'M') > SUM(gender = 'F') THEN 'men' ELSE 'tie' END AS group_name, ABS(SUM(gender = 'F') - SUM(gender = 'M')) AS difference FROM client",
+    "expected_result": [
+      {
+        "group_name": "men",
+        "difference": 79
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_007",
+    "question": "What is the average age of all clients on January 1, 1999, using completed years? Return one number rounded to one decimal place.",
+    "tier": 1,
+    "gold_sql": "SELECT ROUND(AVG(CAST(strftime('%Y', '1999-01-01') AS INTEGER) - CAST(strftime('%Y', birth_date) AS INTEGER) - CASE WHEN strftime('%m-%d', '1999-01-01') < strftime('%m-%d', birth_date) THEN 1 ELSE 0 END), 1) AS average_age FROM client",
+    "expected_result": [
+      {
+        "average_age": 44.8
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_008",
+    "question": "How old was the oldest client on January 1, 1999, in completed years? Return a single age.",
+    "tier": 1,
+    "gold_sql": "SELECT CAST(strftime('%Y', '1999-01-01') AS INTEGER) - CAST(strftime('%Y', MIN(birth_date)) AS INTEGER) - CASE WHEN strftime('%m-%d', MIN(birth_date)) > '01-01' THEN 1 ELSE 0 END AS age FROM client",
+    "expected_result": [
+      {
+        "age": 87
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_009",
+    "question": "What is the most recent birth date among all clients? Return one date.",
+    "tier": 1,
+    "gold_sql": "SELECT MAX(birth_date) AS birth_date FROM client",
+    "expected_result": [
+      {
+        "birth_date": "1987-09-27"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_010",
+    "question": "How many clients were born from January 1, 1970, through December 31, 1979, inclusive? Return a single count.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(*) AS client_count FROM client WHERE birth_date BETWEEN '1970-01-01' AND '1979-12-31'",
+    "expected_result": [
+      {
+        "client_count": 1022
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_011",
+    "question": "How many loans are finished with no problems? Return one count.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(*) AS finished_no_problems FROM loan WHERE status = 'A'",
+    "expected_result": [
+      {
+        "finished_no_problems": 203
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_012",
+    "question": "What is the total approved amount for loans that are finished but not paid? Return one total in US dollars.",
+    "tier": 1,
+    "gold_sql": "SELECT SUM(amount) AS total_amount FROM loan WHERE status = 'B'",
+    "expected_result": [
+      {
+        "total_amount": 4362348
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_013",
+    "question": "What is the average monthly payment on loans that are still running and OK so far? Return one average in US dollars, rounded to two decimal places.",
+    "tier": 1,
+    "gold_sql": "SELECT ROUND(AVG(payments), 2) AS avg_monthly_payment FROM loan WHERE status = 'C'",
+    "expected_result": [
+      {
+        "avg_monthly_payment": 3938.54
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_014",
+    "question": "What is the largest approved amount for any loan? Return one amount in US dollars.",
+    "tier": 1,
+    "gold_sql": "SELECT MAX(amount) AS max_amount FROM loan",
+    "expected_result": [
+      {
+        "max_amount": 590820
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_015",
+    "question": "What is the smallest monthly payment on any loan? Return one amount in US dollars.",
+    "tier": 1,
+    "gold_sql": "SELECT MIN(payments) AS smallest_monthly_payment FROM loan",
+    "expected_result": [
+      {
+        "smallest_monthly_payment": 304.0
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_016",
+    "question": "List every distinct loan length in months from shortest to longest. Return the complete ordered list.",
+    "tier": 1,
+    "gold_sql": "SELECT DISTINCT duration FROM loan ORDER BY duration ASC",
+    "expected_result": [
+      {
+        "duration": 12
+      },
+      {
+        "duration": 24
+      },
+      {
+        "duration": 36
+      },
+      {
+        "duration": 48
+      },
+      {
+        "duration": 60
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_017",
+    "question": "What percentage of all loans are still running with the client in debt? Return one percentage rounded to one decimal place.",
+    "tier": 1,
+    "gold_sql": "SELECT ROUND(100.0 * SUM(CASE WHEN status = 'D' THEN 1 ELSE 0 END) / COUNT(*), 1) AS percentage FROM loan",
+    "expected_result": [
+      {
+        "percentage": 6.6
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_018",
+    "question": "How many loans were approved during calendar year 1996? Return one count.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(*) AS loan_count FROM loan WHERE date >= '1996-01-01' AND date <= '1996-12-31'",
+    "expected_result": [
+      {
+        "loan_count": 117
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_019",
+    "question": "What is the earliest date on which any loan was approved? Return one date.",
+    "tier": 1,
+    "gold_sql": "SELECT MIN(date) AS earliest_loan_date FROM loan",
+    "expected_result": [
+      {
+        "earliest_loan_date": "1993-07-05"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_020",
+    "question": "What is the most recent approval date among loans that are finished but not paid? Return one date.",
+    "tier": 1,
+    "gold_sql": "SELECT MAX(date) AS most_recent_approval_date FROM loan WHERE status = 'B'",
+    "expected_result": [
+      {
+        "most_recent_approval_date": "1997-09-21"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_021",
+    "question": "How many loans have a 60-month term? Return one count.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(*) FROM loan WHERE duration = 60",
+    "expected_result": [
+      {
+        "COUNT(*)": 145
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_022",
+    "question": "What is the combined monthly payment obligation for all loans that are still running with the client in debt? Return one total in US dollars.",
+    "tier": 1,
+    "gold_sql": "SELECT SUM(payments) AS total_monthly_payments FROM loan WHERE status = 'D'",
+    "expected_result": [
+      {
+        "total_monthly_payments": 237899.0
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_023",
+    "question": "For each repayment outcome, how many loans are there? Return four counts in this order: finished with no problems; finished but not paid; running and OK so far; running with the client in debt.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(CASE WHEN status = 'A' THEN 1 END) AS finished_no_problems, COUNT(CASE WHEN status = 'B' THEN 1 END) AS finished_not_paid, COUNT(CASE WHEN status = 'C' THEN 1 END) AS running_ok_so_far, COUNT(CASE WHEN status = 'D' THEN 1 END) AS running_client_in_debt FROM loan",
+    "expected_result": [
+      {
+        "finished_no_problems": 203,
+        "finished_not_paid": 31,
+        "running_ok_so_far": 403,
+        "running_client_in_debt": 45
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_024",
+    "question": "Compare loans finished with no problems and loans finished but not paid by average approved amount. Return both averages in that order, rounded to two decimal places, and the difference found by subtracting the second average from the first.",
+    "tier": 1,
+    "gold_sql": "SELECT ROUND(AVG(CASE WHEN status = 'A' THEN amount END), 2) AS avg_finished_no_problems, ROUND(AVG(CASE WHEN status = 'B' THEN amount END), 2) AS avg_finished_not_paid, ROUND(AVG(CASE WHEN status = 'A' THEN amount END) - AVG(CASE WHEN status = 'B' THEN amount END), 2) AS difference FROM loan WHERE status IN ('A', 'B')",
+    "expected_result": [
+      {
+        "avg_finished_no_problems": 91641.46,
+        "avg_finished_not_paid": 140720.9,
+        "difference": -49079.45
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_025",
+    "question": "How many credit cards has the bank issued in total? Return a single count.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(*) AS total_cards FROM card",
+    "expected_result": [
+      {
+        "total_cards": 892
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_026",
+    "question": "How many gold credit cards are there in the bank's records? Return a single count.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(*) AS gold_card_count FROM card WHERE type = 'gold'",
+    "expected_result": [
+      {
+        "gold_card_count": 88
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_027",
+    "question": "How many junior credit cards were issued during 1997? Return a single count.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(*) AS junior_cards_1997 FROM card WHERE type = 'junior' AND issued BETWEEN '1997-01-01' AND '1997-12-31'",
+    "expected_result": [
+      {
+        "junior_cards_1997": 26
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_028",
+    "question": "What percentage of all credit cards are classic cards? Return one number rounded to two decimal places.",
+    "tier": 1,
+    "gold_sql": "SELECT ROUND(100.0 * SUM(CASE WHEN type = 'classic' THEN 1 ELSE 0 END) / COUNT(*), 2) AS classic_percentage FROM card",
+    "expected_result": [
+      {
+        "classic_percentage": 73.88
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_029",
+    "question": "What is the earliest date on which a gold card was issued? Return a single date.",
+    "tier": 1,
+    "gold_sql": "SELECT MIN(issued) AS earliest_gold_card_date FROM card WHERE type = 'gold'",
+    "expected_result": [
+      {
+        "earliest_gold_card_date": "1995-02-08"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_030",
+    "question": "What is the most recent issue date among all junior cards? Return a single date.",
+    "tier": 1,
+    "gold_sql": "SELECT MAX(issued) AS most_recent_issue_date FROM card WHERE type = 'junior'",
+    "expected_result": [
+      {
+        "most_recent_issue_date": "1998-12-23"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_031",
+    "question": "How many credit cards of any class were issued during 1998? Return a single count.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(*) AS card_count FROM card WHERE issued BETWEEN '1998-01-01' AND '1998-12-31'",
+    "expected_result": [
+      {
+        "card_count": 449
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_032",
+    "question": "How many classic cards were issued between January 1, 1996 and December 31, 1997? Return a single count.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(*) AS classic_card_count\nFROM card\nWHERE type = 'classic'\n  AND issued >= '1996-01-01'\n  AND issued <= '1997-12-31'",
+    "expected_result": [
+      {
+        "classic_card_count": 273
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_033",
+    "question": "How many more classic cards than gold cards does the bank have on file? Return the difference as a single number.",
+    "tier": 1,
+    "gold_sql": "SELECT SUM(CASE WHEN type = 'classic' THEN 1 ELSE 0 END) - SUM(CASE WHEN type = 'gold' THEN 1 ELSE 0 END) AS difference FROM card",
+    "expected_result": [
+      {
+        "difference": 571
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_034",
+    "question": "On average, how many credit cards were issued per month during 1997? Return a single number.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(*) * 1.0 / 12 AS avg_cards_per_month FROM card WHERE issued LIKE '1997%'",
+    "expected_result": [
+      {
+        "avg_cards_per_month": 20.166666666666668
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_035",
+    "question": "How many credit cards were issued before the start of 1996? Return a single count.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(*) AS card_count\nFROM card\nWHERE issued < '1996-01-01'",
+    "expected_result": [
+      {
+        "card_count": 85
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_036",
+    "question": "Of all the credit cards issued in 1998, what percentage were gold cards? Return one number rounded to two decimal places.",
+    "tier": 1,
+    "gold_sql": "SELECT ROUND(100.0 * SUM(CASE WHEN type = 'gold' THEN 1 ELSE 0 END) / COUNT(*), 2) AS gold_percentage\nFROM card\nWHERE substr(issued, 1, 4) = '1998'",
+    "expected_result": [
+      {
+        "gold_percentage": 11.8
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_037",
+    "question": "How many transactions are recorded overall? Return one count.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(*) AS transaction_count FROM trans",
+    "expected_result": [
+      {
+        "transaction_count": 1056320
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_038",
+    "question": "How many transactions were recorded as credits? Return one count.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(*) AS credit_count FROM trans WHERE type = 'PRIJEM'",
+    "expected_result": [
+      {
+        "credit_count": 405083
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_039",
+    "question": "What was the total dollar amount of all credit transactions? Return one total in US dollars.",
+    "tier": 1,
+    "gold_sql": "SELECT SUM(amount) AS total_credit_amount FROM trans WHERE type = 'PRIJEM'",
+    "expected_result": [
+      {
+        "total_credit_amount": 3227482664
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_040",
+    "question": "What was the total amount withdrawn in cash? Return one total in US dollars.",
+    "tier": 1,
+    "gold_sql": "SELECT SUM(amount) AS total_cash_withdrawn FROM trans WHERE operation = 'VYBER'",
+    "expected_result": [
+      {
+        "total_cash_withdrawn": 2339570649
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_041",
+    "question": "What was the average size of a credit-card withdrawal? Return one average in US dollars, rounded to two decimal places.",
+    "tier": 1,
+    "gold_sql": "SELECT ROUND(AVG(amount), 2) AS avg_credit_card_withdrawal FROM trans WHERE operation = 'VYBER KARTOU'",
+    "expected_result": [
+      {
+        "avg_credit_card_withdrawal": 2261.12
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_042",
+    "question": "Which moved more money overall: cash withdrawals or credit-card withdrawals? Return both totals in US dollars, state which is larger, and give how much more it moved.",
+    "tier": 1,
+    "gold_sql": "SELECT SUM(CASE WHEN operation = 'VYBER' THEN amount ELSE 0 END) AS cash_withdrawals_total_usd, SUM(CASE WHEN operation = 'VYBER KARTOU' THEN amount ELSE 0 END) AS credit_card_withdrawals_total_usd, CASE WHEN SUM(CASE WHEN operation = 'VYBER' THEN amount ELSE 0 END) > SUM(CASE WHEN operation = 'VYBER KARTOU' THEN amount ELSE 0 END) THEN 'cash withdrawals' WHEN SUM(CASE WHEN operation = 'VYBER KARTOU' THEN amount ELSE 0 END) > SUM(CASE WHEN operation = 'VYBER' THEN amount ELSE 0 END) THEN 'credit-card withdrawals' ELSE 'tie' END AS larger_category, ABS(SUM(CASE WHEN operation = 'VYBER' THEN amount ELSE 0 END) - SUM(CASE WHEN operation = 'VYBER KARTOU' THEN amount ELSE 0 END)) AS difference_usd FROM trans WHERE operation IN ('VYBER', 'VYBER KARTOU')",
+    "expected_result": [
+      {
+        "cash_withdrawals_total_usd": 2339570649,
+        "credit_card_withdrawals_total_usd": 18170400,
+        "larger_category": "cash withdrawals",
+        "difference_usd": 2321400249
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_043",
+    "question": "What percentage of all transactions were cash deposits? Return one percentage rounded to two decimal places.",
+    "tier": 1,
+    "gold_sql": "SELECT ROUND(100.0 * SUM(CASE WHEN operation = 'VKLAD' THEN 1 ELSE 0 END) / COUNT(*), 2) AS cash_deposit_percentage FROM trans",
+    "expected_result": [
+      {
+        "cash_deposit_percentage": 14.84
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_044",
+    "question": "How many transactions were made during calendar year 1997? Return one count.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(*) AS transaction_count FROM trans WHERE date >= '1997-01-01' AND date <= '1997-12-31'",
+    "expected_result": [
+      {
+        "transaction_count": 284409
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_045",
+    "question": "What was the gross dollar amount of all transactions made in December 1998, adding credits and withdrawals together rather than netting them? Return one total in US dollars.",
+    "tier": 1,
+    "gold_sql": "SELECT SUM(amount) AS gross_amount FROM trans WHERE date >= '1998-12-01' AND date <= '1998-12-31'",
+    "expected_result": [
+      {
+        "gross_amount": 171697526
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_046",
+    "question": "What is the highest balance recorded immediately after a transaction? Return one amount in US dollars.",
+    "tier": 1,
+    "gold_sql": "SELECT MAX(balance) AS highest_balance FROM trans",
+    "expected_result": [
+      {
+        "highest_balance": 209637
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_047",
+    "question": "How many transactions left the account with a negative balance? Return one count.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(*) AS negative_balance_count FROM trans WHERE balance < 0",
+    "expected_result": [
+      {
+        "negative_balance_count": 2999
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_048",
+    "question": "After transactions involving sanction interest, what was the average resulting balance? Return one average in US dollars, rounded to two decimal places.",
+    "tier": 1,
+    "gold_sql": "SELECT ROUND(AVG(balance), 2) AS avg_balance FROM trans WHERE k_symbol = 'SANKC. UROK'",
+    "expected_result": [
+      {
+        "avg_balance": 5718.19
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_049",
+    "question": "What was the total dollar amount recorded for old-age pension transactions? Return one total in US dollars.",
+    "tier": 1,
+    "gold_sql": "SELECT SUM(amount) AS total_pension_amount FROM trans WHERE k_symbol = 'DUCHOD'",
+    "expected_result": [
+      {
+        "total_pension_amount": 167472118
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_050",
+    "question": "How many standing orders are earmarked as insurance payments? Return a single count.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(*) AS insurance_order_count FROM \"order\" WHERE k_symbol = 'POJISTNE'",
+    "expected_result": [
+      {
+        "insurance_order_count": 532
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_051",
+    "question": "How many standing orders have no purpose recorded at all? Return a single count.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(*) AS order_count FROM \"order\" WHERE k_symbol = ''",
+    "expected_result": [
+      {
+        "order_count": 1379
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_052",
+    "question": "What is the total amount debited through standing orders for household payments? Return one combined total.",
+    "tier": 1,
+    "gold_sql": "SELECT SUM(amount) AS total_household_payments FROM \"order\" WHERE k_symbol = 'SIPO'",
+    "expected_result": [
+      {
+        "total_household_payments": 13965417.0
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_053",
+    "question": "What is the average amount of a standing order used for leasing? Return a single average.",
+    "tier": 1,
+    "gold_sql": "SELECT AVG(amount) AS average_amount FROM \"order\" WHERE k_symbol = 'LEASING'",
+    "expected_result": [
+      {
+        "average_amount": 2227.35219941349
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_054",
+    "question": "What is the largest single standing order amount among orders for loan repayments? Return just that maximum amount.",
+    "tier": 1,
+    "gold_sql": "SELECT MAX(amount) AS max_amount FROM \"order\" WHERE k_symbol = 'UVER'",
+    "expected_result": [
+      {
+        "max_amount": 9910.0
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_055",
+    "question": "What is the smallest amount found among standing orders for insurance payments? Return just that minimum amount.",
+    "tier": 1,
+    "gold_sql": "SELECT MIN(amount) AS min_amount FROM \"order\" WHERE k_symbol = 'POJISTNE'",
+    "expected_result": [
+      {
+        "min_amount": 1.0
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_056",
+    "question": "What percentage of all standing orders are loan repayments? Return a single percentage.",
+    "tier": 1,
+    "gold_sql": "SELECT ROUND(100.0 * COUNT(CASE WHEN k_symbol = 'UVER' THEN 1 END) / COUNT(*), 2) AS percentage\nFROM \"order\"",
+    "expected_result": [
+      {
+        "percentage": 11.08
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_057",
+    "question": "How many standing orders debit an amount greater than 10,000? Return a single count.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(*) AS order_count FROM \"order\" WHERE amount > 10000",
+    "expected_result": [
+      {
+        "order_count": 137
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_058",
+    "question": "List the distinct named purposes used to characterize standing orders, ignoring orders with no purpose recorded. Return the four purposes in alphabetical order.",
+    "tier": 1,
+    "gold_sql": "SELECT DISTINCT k_symbol FROM \"order\" WHERE k_symbol != '' ORDER BY k_symbol ASC",
+    "expected_result": [
+      {
+        "k_symbol": "LEASING"
+      },
+      {
+        "k_symbol": "POJISTNE"
+      },
+      {
+        "k_symbol": "SIPO"
+      },
+      {
+        "k_symbol": "UVER"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_059",
+    "question": "How many standing orders have an amount between 1,000 and 5,000 inclusive? Return a single count.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(*) AS order_count FROM \"order\" WHERE amount BETWEEN 1000 AND 5000",
+    "expected_result": [
+      {
+        "order_count": 3682
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_060",
+    "question": "What is the average amount across all standing orders, regardless of purpose? Return a single average.",
+    "tier": 1,
+    "gold_sql": "SELECT AVG(amount) AS avg_amount FROM \"order\"",
+    "expected_result": [
+      {
+        "avg_amount": 3280.6356977283267
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_061",
+    "question": "How many districts are in the south Moravia region? Return a single count.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(*) AS district_count FROM district WHERE A3 = 'south Moravia'",
+    "expected_result": [
+      {
+        "district_count": 14
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_062",
+    "question": "What is the combined population of all the districts in the central Bohemia region? Return one total number of inhabitants.",
+    "tier": 1,
+    "gold_sql": "SELECT SUM(CAST(A4 AS INTEGER)) AS total_inhabitants FROM district WHERE A3 = 'central Bohemia'",
+    "expected_result": [
+      {
+        "total_inhabitants": 1105234
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_063",
+    "question": "What is the total amount, in US dollars, of all old-age pension payments received? Return a single total.",
+    "tier": 1,
+    "gold_sql": "SELECT SUM(amount) AS total_pension_amount FROM trans WHERE k_symbol = 'DUCHOD' AND type = 'PRIJEM'",
+    "expected_result": [
+      {
+        "total_pension_amount": 167472118
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_064",
+    "question": "Across the whole country, did the number of committed crimes go up or down from 1995 to 1996? Return the direction and the nationwide total for each year.",
+    "tier": 1,
+    "gold_sql": "SELECT CASE WHEN SUM(A16) > SUM(A15) THEN 'up' WHEN SUM(A16) < SUM(A15) THEN 'down' ELSE 'unchanged' END AS direction, SUM(A15) AS total_crimes_1995, SUM(A16) AS total_crimes_1996 FROM district",
+    "expected_result": [
+      {
+        "direction": "up",
+        "total_crimes_1995": 368624,
+        "total_crimes_1996": 387374
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_065",
+    "question": "How many accounts are on weekly statements? Return a single count.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(*) AS weekly_accounts FROM account WHERE frequency = 'POPLATEK TYDNE'",
+    "expected_result": [
+      {
+        "weekly_accounts": 240
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_066",
+    "question": "What percentage of the bank's clients are women? Return a single percentage.",
+    "tier": 1,
+    "gold_sql": "SELECT ROUND(100.0 * SUM(CASE WHEN gender = 'F' THEN 1 ELSE 0 END) / COUNT(*), 2) AS women_percentage FROM client",
+    "expected_result": [
+      {
+        "women_percentage": 49.26
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_067",
+    "question": "Among loans that are still running with the client in debt, what is the smallest monthly payment? Return one amount in US dollars.",
+    "tier": 1,
+    "gold_sql": "SELECT MIN(payments) AS min_monthly_payment FROM loan WHERE status = 'D'",
+    "expected_result": [
+      {
+        "min_monthly_payment": 1728.0
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_068",
+    "question": "What is the average approved amount, in US dollars, of loans that finished with no problems? Return a single number.",
+    "tier": 1,
+    "gold_sql": "SELECT AVG(amount) FROM loan WHERE status = 'A'",
+    "expected_result": [
+      {
+        "AVG(amount)": 91641.45812807881
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_069",
+    "question": "How many accounts have at least one disponent — an authorized user who can act on the account without owning it? Return a single count.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(DISTINCT account_id) AS account_count FROM disp WHERE type = 'DISPONENT'",
+    "expected_result": [
+      {
+        "account_count": 869
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_070",
+    "question": "How many client-account relationships are ownerships, and how many are disponent relationships? Return both counts, labeled.",
+    "tier": 1,
+    "gold_sql": "SELECT SUM(CASE WHEN type = 'OWNER' THEN 1 ELSE 0 END) AS ownership_count, SUM(CASE WHEN type = 'DISPONENT' THEN 1 ELSE 0 END) AS disponent_count FROM disp",
+    "expected_result": [
+      {
+        "ownership_count": 4500,
+        "disponent_count": 869
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_071",
+    "question": "What percentage of all client-account relationships are disponent relationships rather than ownerships? Return the percentage rounded to one decimal place.",
+    "tier": 1,
+    "gold_sql": "SELECT ROUND(100.0 * SUM(CASE WHEN type = 'DISPONENT' THEN 1 ELSE 0 END) / COUNT(*), 1) AS percentage\nFROM disp",
+    "expected_result": [
+      {
+        "percentage": 16.2
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_072",
+    "question": "How many different clients act as a disponent on at least one account? Return a single count.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(DISTINCT client_id) AS disponent_client_count FROM disp WHERE type = 'DISPONENT'",
+    "expected_result": [
+      {
+        "disponent_client_count": 869
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_073",
+    "question": "What percentage of accounts receive monthly statements? Return the percentage rounded to one decimal place.",
+    "tier": 1,
+    "gold_sql": "SELECT ROUND(100.0 * SUM(CASE WHEN frequency = 'POPLATEK MESICNE' THEN 1 ELSE 0 END) / COUNT(*), 1) AS percentage FROM account",
+    "expected_result": [
+      {
+        "percentage": 92.6
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_074",
+    "question": "How many accounts that receive per-transaction statements were opened during 1996? Return a single count.",
+    "tier": 1,
+    "gold_sql": "SELECT COUNT(account_id) AS account_count FROM account WHERE frequency = 'POPLATEK PO OBRATU' AND date >= '1996-01-01' AND date <= '1996-12-31'",
+    "expected_result": [
+      {
+        "account_count": 28
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_075",
+    "question": "What is the earliest opening date among accounts that receive weekly statements? Return a single date.",
+    "tier": 1,
+    "gold_sql": "SELECT MIN(date) AS earliest_date FROM account WHERE frequency = 'POPLATEK TYDNE'",
+    "expected_result": [
+      {
+        "earliest_date": "1993-01-08"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_076",
+    "question": "How many accounts are located in the Prague region? Return a single count.",
+    "tier": 2,
+    "gold_sql": "SELECT COUNT(DISTINCT a.account_id) AS account_count\nFROM account a\nJOIN district d ON a.district_id = d.district_id\nWHERE d.A3 = 'Prague'",
+    "expected_result": [
+      {
+        "account_count": 554
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_077",
+    "question": "How many accounts in the south Moravia region have weekly statements? Return a single count.",
+    "tier": 2,
+    "gold_sql": "SELECT COUNT(DISTINCT a.account_id) AS count\nFROM account AS a\nJOIN district AS d ON d.district_id = a.district_id\nWHERE d.A3 = 'south Moravia'\n  AND a.frequency = 'POPLATEK TYDNE'",
+    "expected_result": [
+      {
+        "count": 35
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_078",
+    "question": "Which district has the highest average salary? Return the district name and its average salary.",
+    "tier": 2,
+    "gold_sql": "SELECT A2 AS district_name, A11 AS average_salary FROM district ORDER BY A11 DESC LIMIT 1",
+    "expected_result": [
+      {
+        "district_name": "Hl.m. Praha",
+        "average_salary": 12541
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_079",
+    "question": "How many accounts were opened during 1996 in the central Bohemia region? Return a single count.",
+    "tier": 2,
+    "gold_sql": "SELECT COUNT(*) AS account_count FROM account a JOIN district d ON a.district_id = d.district_id WHERE d.A3 = 'central Bohemia' AND a.date BETWEEN '1996-01-01' AND '1996-12-31'",
+    "expected_result": [
+      {
+        "account_count": 191
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_080",
+    "question": "What is the earliest date on which an account was opened in the west Bohemia region? Return the date.",
+    "tier": 2,
+    "gold_sql": "SELECT MIN(a.date) AS earliest_date FROM account AS a JOIN district AS d ON a.district_id = d.district_id WHERE d.A3 = 'west Bohemia'",
+    "expected_result": [
+      {
+        "earliest_date": "1993-01-02"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_081",
+    "question": "What percentage of accounts in the north Moravia region have monthly statements? Return the percentage rounded to one decimal place.",
+    "tier": 2,
+    "gold_sql": "SELECT ROUND(100.0 * SUM(CASE WHEN a.frequency = 'POPLATEK MESICNE' THEN 1 ELSE 0 END) / COUNT(*), 1) AS percentage\nFROM account AS a\nJOIN district AS d ON d.district_id = a.district_id\nWHERE d.A3 = 'north Moravia'",
+    "expected_result": [
+      {
+        "percentage": 93.6
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_082",
+    "question": "Considering only districts that contain at least one account, what is the combined number of inhabitants of the north Bohemia region? Return a single total.",
+    "tier": 2,
+    "gold_sql": "SELECT SUM(CAST(d.A4 AS INTEGER)) AS total_inhabitants\nFROM district AS d\nWHERE d.A3 = 'north Bohemia'\n  AND EXISTS (\n    SELECT 1\n    FROM account AS a\n    WHERE a.district_id = d.district_id\n  )",
+    "expected_result": [
+      {
+        "total_inhabitants": 1178977
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_083",
+    "question": "Which district in the central Bohemia region has the smallest population? Return the district name and its number of inhabitants.",
+    "tier": 2,
+    "gold_sql": "SELECT A2 AS district_name, A4 AS number_of_inhabitants FROM district WHERE A3 = 'central Bohemia' ORDER BY CAST(A4 AS INTEGER) ASC LIMIT 1",
+    "expected_result": [
+      {
+        "district_name": "Rakovnik",
+        "number_of_inhabitants": "53921"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_084",
+    "question": "How many clients live in the Prague region? Return a single count.",
+    "tier": 2,
+    "gold_sql": "SELECT COUNT(*) AS client_count FROM client c JOIN district d ON c.district_id = d.district_id WHERE d.A3 = 'Prague'",
+    "expected_result": [
+      {
+        "client_count": 663
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_085",
+    "question": "What percentage of clients live in the South Moravia region? Return one percentage rounded to two decimal places.",
+    "tier": 2,
+    "gold_sql": "SELECT ROUND(100.0 * SUM(CASE WHEN d.A3 = 'south Moravia' THEN 1 ELSE 0 END) / COUNT(*), 2) AS percentage\nFROM client c\nJOIN district d ON c.district_id = d.district_id",
+    "expected_result": [
+      {
+        "percentage": 17.45
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_086",
+    "question": "What is the combined total number of clients living in the Central Bohemia, East Bohemia, and North Bohemia regions? Return a single count.",
+    "tier": 2,
+    "gold_sql": "SELECT COUNT(*) AS client_count\nFROM client c\nJOIN district d ON c.district_id = d.district_id\nWHERE d.A3 IN ('central Bohemia', 'east Bohemia', 'north Bohemia')",
+    "expected_result": [
+      {
+        "client_count": 1885
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_087",
+    "question": "List the client IDs of the 10 youngest clients, ordered from youngest to oldest; break ties by client ID from lowest to highest. Return 10 IDs.",
+    "tier": 2,
+    "gold_sql": "SELECT client_id FROM client ORDER BY birth_date DESC, client_id ASC LIMIT 10",
+    "expected_result": [
+      {
+        "client_id": 3428
+      },
+      {
+        "client_id": 4354
+      },
+      {
+        "client_id": 10201
+      },
+      {
+        "client_id": 3417
+      },
+      {
+        "client_id": 734
+      },
+      {
+        "client_id": 4530
+      },
+      {
+        "client_id": 379
+      },
+      {
+        "client_id": 4170
+      },
+      {
+        "client_id": 1338
+      },
+      {
+        "client_id": 1660
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_088",
+    "question": "List the five highest approved loan amounts from largest to smallest. Include duplicate amounts if they occur, and return exactly five amounts.",
+    "tier": 2,
+    "gold_sql": "SELECT amount FROM loan ORDER BY amount DESC LIMIT 5",
+    "expected_result": [
+      {
+        "amount": 590820
+      },
+      {
+        "amount": 566640
+      },
+      {
+        "amount": 541200
+      },
+      {
+        "amount": 538500
+      },
+      {
+        "amount": 504000
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_089",
+    "question": "Which class of credit card - junior, classic, or gold - has been issued the most? Return just the name of the card class.",
+    "tier": 2,
+    "gold_sql": "SELECT type FROM card GROUP BY type ORDER BY COUNT(*) DESC LIMIT 1",
+    "expected_result": [
+      {
+        "type": "classic"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_090",
+    "question": "List each of the three credit card classes together with the number of cards issued in that class, ordered from the most cards to the fewest. Return exactly three rows.",
+    "tier": 2,
+    "gold_sql": "SELECT type, COUNT(card_id) AS num_cards FROM card GROUP BY type ORDER BY num_cards DESC",
+    "expected_result": [
+      {
+        "type": "classic",
+        "num_cards": 659
+      },
+      {
+        "type": "junior",
+        "num_cards": 145
+      },
+      {
+        "type": "gold",
+        "num_cards": 88
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_091",
+    "question": "Did the bank issue more credit cards in 1996 or in 1997? Return the year with more issued cards along with the number of cards issued that year.",
+    "tier": 2,
+    "gold_sql": "SELECT substr(issued, 1, 4) AS issued_year, COUNT(*) AS cards_issued\nFROM card\nWHERE substr(issued, 1, 4) IN ('1996', '1997')\nGROUP BY substr(issued, 1, 4)\nORDER BY cards_issued DESC\nLIMIT 1",
+    "expected_result": [
+      {
+        "issued_year": "1997",
+        "cards_issued": 242
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_092",
+    "question": "List the five transaction modes with their transaction counts. Return all five, ordered from highest count to lowest; if counts are tied, order those names alphabetically from A to Z.",
+    "tier": 2,
+    "gold_sql": "SELECT operation, COUNT(*) AS transaction_count FROM trans GROUP BY operation ORDER BY transaction_count DESC, operation ASC",
+    "expected_result": [
+      {
+        "operation": "VYBER",
+        "transaction_count": 434918
+      },
+      {
+        "operation": "PREVOD NA UCET",
+        "transaction_count": 208283
+      },
+      {
+        "operation": null,
+        "transaction_count": 183114
+      },
+      {
+        "operation": "VKLAD",
+        "transaction_count": 156743
+      },
+      {
+        "operation": "PREVOD Z UCTU",
+        "transaction_count": 65226
+      },
+      {
+        "operation": "VYBER KARTOU",
+        "transaction_count": 8036
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_093",
+    "question": "Are there more standing orders for insurance payments or for household payments? Return the purpose that has more orders, together with its count.",
+    "tier": 2,
+    "gold_sql": "SELECT k_symbol, COUNT(*) AS order_count FROM \"order\" WHERE k_symbol IN ('POJISTNE', 'SIPO') GROUP BY k_symbol ORDER BY order_count DESC LIMIT 1",
+    "expected_result": [
+      {
+        "k_symbol": "SIPO",
+        "order_count": 3502
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_094",
+    "question": "Comparing leasing orders and loan repayment orders, which purpose has the higher average amount? Return that purpose and its average amount.",
+    "tier": 2,
+    "gold_sql": "SELECT k_symbol AS purpose, AVG(amount) AS avg_amount\nFROM \"order\"\nWHERE k_symbol IN ('LEASING', 'UVER')\nGROUP BY k_symbol\nORDER BY avg_amount DESC\nLIMIT 1",
+    "expected_result": [
+      {
+        "purpose": "UVER",
+        "avg_amount": 4233.1722454672245
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_095",
+    "question": "For each of the four named purposes, how many standing orders does it have? Return a list of the four purposes with their counts, ordered from the most orders to the fewest.",
+    "tier": 2,
+    "gold_sql": "SELECT k_symbol, COUNT(*) AS order_count FROM \"order\" WHERE k_symbol IN ('LEASING', 'POJISTNE', 'SIPO', 'UVER') GROUP BY k_symbol ORDER BY order_count DESC",
+    "expected_result": [
+      {
+        "k_symbol": "SIPO",
+        "order_count": 3502
+      },
+      {
+        "k_symbol": "UVER",
+        "order_count": 717
+      },
+      {
+        "k_symbol": "POJISTNE",
+        "order_count": 532
+      },
+      {
+        "k_symbol": "LEASING",
+        "order_count": 341
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_096",
+    "question": "Which purpose moves more money overall: insurance payments or household payments? Return the purpose with the larger combined debited amount.",
+    "tier": 2,
+    "gold_sql": "SELECT k_symbol FROM \"order\" WHERE k_symbol IN ('POJISTNE', 'SIPO') GROUP BY k_symbol ORDER BY SUM(amount) DESC LIMIT 1",
+    "expected_result": [
+      {
+        "k_symbol": "SIPO"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_097",
+    "question": "Which five districts have the largest populations? Return the five district names, ordered from most populous to least populous.",
+    "tier": 2,
+    "gold_sql": "SELECT A2 AS district_name FROM district ORDER BY CAST(A4 AS INTEGER) DESC LIMIT 5",
+    "expected_result": [
+      {
+        "district_name": "Hl.m. Praha"
+      },
+      {
+        "district_name": "Brno - mesto"
+      },
+      {
+        "district_name": "Ostrava - mesto"
+      },
+      {
+        "district_name": "Karvina"
+      },
+      {
+        "district_name": "Frydek - Mistek"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_098",
+    "question": "Comparing the east Bohemia and west Bohemia regions, which one had the higher average unemployment rate in 1995? Return the region name and its average rate.",
+    "tier": 2,
+    "gold_sql": "SELECT A3 AS region, AVG(A12) AS avg_unemployment_rate_1995 FROM district WHERE A3 IN ('east Bohemia', 'west Bohemia') GROUP BY A3 ORDER BY avg_unemployment_rate_1995 DESC LIMIT 1",
+    "expected_result": [
+      {
+        "region": "east Bohemia",
+        "avg_unemployment_rate_1995": 2.3181818181818183
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_099",
+    "question": "How many accounts are held at branches in the Kladno district? Return a single count.",
+    "tier": 2,
+    "gold_sql": "SELECT COUNT(*) AS account_count FROM account a JOIN district d ON a.district_id = d.district_id WHERE d.A2 = 'Kladno'",
+    "expected_result": [
+      {
+        "account_count": 48
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_100",
+    "question": "On average, how many accounts does each disponent have access to? Return the average rounded to two decimal places.",
+    "tier": 2,
+    "gold_sql": "SELECT ROUND(AVG(account_count), 2) AS avg_accounts_per_disponent\nFROM (\n  SELECT client_id, COUNT(DISTINCT account_id) AS account_count\n  FROM disp\n  WHERE type = 'DISPONENT'\n  GROUP BY client_id\n) AS per_disponent",
+    "expected_result": [
+      {
+        "avg_accounts_per_disponent": 1.0
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_101",
+    "question": "What is the largest number of accounts owned by any single client? Return that maximum count.",
+    "tier": 2,
+    "gold_sql": "SELECT MAX(account_count) AS max_accounts FROM (SELECT client_id, COUNT(DISTINCT account_id) AS account_count FROM disp WHERE type = 'OWNER' GROUP BY client_id) AS owner_counts",
+    "expected_result": [
+      {
+        "max_accounts": 1
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_102",
+    "question": "How many ownership relationships are tied to accounts held at branches in the Prague region? Return a single count.",
+    "tier": 2,
+    "gold_sql": "SELECT COUNT(DISTINCT d.disp_id) AS ownership_relationship_count\nFROM disp AS d\nJOIN account AS a ON d.account_id = a.account_id\nJOIN district AS di ON a.district_id = di.district_id\nWHERE d.type = 'OWNER'\n  AND di.A3 = 'Prague'",
+    "expected_result": [
+      {
+        "ownership_relationship_count": 554
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_103",
+    "question": "How many disponent relationships belong to female clients? Return a single count.",
+    "tier": 2,
+    "gold_sql": "SELECT COUNT(DISTINCT disp.disp_id) AS count\nFROM disp\nJOIN client ON disp.client_id = client.client_id\nWHERE disp.type = 'DISPONENT'\n  AND client.gender = 'F'",
+    "expected_result": [
+      {
+        "count": 437
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_104",
+    "question": "What percentage of all accounts are held at branches in the Prague region? Return the percentage rounded to two decimal places.",
+    "tier": 2,
+    "gold_sql": "SELECT ROUND(100.0 * SUM(CASE WHEN d.A3 = 'Prague' THEN 1 ELSE 0 END) / COUNT(*), 2) AS percentage FROM account AS a JOIN district AS d ON a.district_id = d.district_id",
+    "expected_result": [
+      {
+        "percentage": 12.31
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_105",
+    "question": "How many accounts opened from January 1, 1996 through December 31, 1996 were held at branches in the East Bohemia region? Return a single count.",
+    "tier": 2,
+    "gold_sql": "SELECT COUNT(DISTINCT a.account_id) AS account_count\nFROM account a\nJOIN district d ON a.district_id = d.district_id\nWHERE a.date BETWEEN '1996-01-01' AND '1996-12-31'\n  AND d.A3 = 'east Bohemia'",
+    "expected_result": [
+      {
+        "account_count": 171
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_106",
+    "question": "What is the earliest opening date among accounts held at branches in the West Bohemia region? Return one date in YYYY-MM-DD format.",
+    "tier": 2,
+    "gold_sql": "SELECT MIN(a.date) AS earliest_opening_date\nFROM account AS a\nJOIN district AS d ON a.district_id = d.district_id\nWHERE d.A3 = 'west Bohemia'",
+    "expected_result": [
+      {
+        "earliest_opening_date": "1993-01-02"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_107",
+    "question": "How many accounts with weekly account fees are held at branches in the Central Bohemia region? Return a single count.",
+    "tier": 2,
+    "gold_sql": "SELECT COUNT(*) AS account_count FROM account JOIN district ON account.district_id = district.district_id WHERE account.frequency = 'POPLATEK TYDNE' AND district.A3 = 'central Bohemia'",
+    "expected_result": [
+      {
+        "account_count": 41
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_108",
+    "question": "What percentage of accounts held at branches in the Central Bohemia region charge a fee based on account turnover? Return the percentage rounded to two decimal places.",
+    "tier": 2,
+    "gold_sql": "SELECT ROUND(100.0 * SUM(CASE WHEN a.frequency = 'POPLATEK PO OBRATU' THEN 1 ELSE 0 END) / COUNT(*), 2) AS percentage\nFROM account AS a\nJOIN district AS d ON a.district_id = d.district_id\nWHERE d.A3 = 'central Bohemia'",
+    "expected_result": [
+      {
+        "percentage": 1.57
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_109",
+    "question": "How many accounts are held at branches in districts where the 1996 unemployment rate was above 10 percent? Return a single count.",
+    "tier": 2,
+    "gold_sql": "SELECT COUNT(*) AS account_count FROM account a JOIN district d ON a.district_id = d.district_id WHERE d.A13 > 10",
+    "expected_result": [
+      {
+        "account_count": 0
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_110",
+    "question": "What is the average salary across districts in the South Bohemia region that have at least one account? Give each qualifying district equal weight and return the average rounded to two decimal places.",
+    "tier": 2,
+    "gold_sql": "SELECT ROUND(AVG(d.A11), 2) AS average_salary\nFROM district AS d\nWHERE d.A3 = 'south Bohemia'\n  AND EXISTS (\n    SELECT 1\n    FROM account AS a\n    WHERE a.district_id = d.district_id\n  )",
+    "expected_result": [
+      {
+        "average_salary": 8831.5
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_111",
+    "question": "How many districts in the North Bohemia region have at least one account held at a branch? Return a single count.",
+    "tier": 2,
+    "gold_sql": "SELECT COUNT(DISTINCT d.district_id) AS district_count\nFROM district AS d\nJOIN account AS a ON a.district_id = d.district_id\nWHERE d.A3 = 'north Bohemia'",
+    "expected_result": [
+      {
+        "district_count": 10
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_112",
+    "question": "What is the combined population of the districts in the Prague region that have at least one account held at a branch? Count each district only once and return a single total.",
+    "tier": 2,
+    "gold_sql": "SELECT COALESCE(SUM(CAST(d.A4 AS INTEGER)), 0) AS combined_population\nFROM district d\nWHERE d.A3 = 'Prague'\n  AND EXISTS (\n    SELECT 1\n    FROM account a\n    WHERE a.district_id = d.district_id\n  )",
+    "expected_result": [
+      {
+        "combined_population": 1204953
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_113",
+    "question": "How many accounts does the bank have in the Prague region? Give me a single count.",
+    "tier": 2,
+    "gold_sql": "SELECT COUNT(*) AS account_count FROM account a JOIN district d ON a.district_id = d.district_id WHERE d.A3 = 'Prague'",
+    "expected_result": [
+      {
+        "account_count": 554
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_114",
+    "question": "How many accounts with weekly statements are there in the south Moravia region? Return one number.",
+    "tier": 2,
+    "gold_sql": "SELECT COUNT(*) AS num_accounts FROM account a JOIN district d ON a.district_id = d.district_id WHERE a.frequency = 'POPLATEK TYDNE' AND d.A3 = 'south Moravia'",
+    "expected_result": [
+      {
+        "num_accounts": 35
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_115",
+    "question": "How many accounts were opened in the central Bohemia region during 1996, from January 1 through December 31? I need a count.",
+    "tier": 2,
+    "gold_sql": "SELECT COUNT(*) AS account_count\nFROM account a\nJOIN district d ON a.district_id = d.district_id\nWHERE d.A3 = 'central Bohemia'\n  AND a.date BETWEEN '1996-01-01' AND '1996-12-31'",
+    "expected_result": [
+      {
+        "account_count": 191
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_116",
+    "question": "When was the oldest account in the north Bohemia region opened? Just give the single date.",
+    "tier": 2,
+    "gold_sql": "SELECT MIN(a.date) AS oldest_account_date FROM account a JOIN district d ON a.district_id = d.district_id WHERE d.A3 = 'north Bohemia'",
+    "expected_result": [
+      {
+        "oldest_account_date": "1993-01-06"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_117",
+    "question": "What is the most recent account-opening date among accounts with monthly statements in the east Bohemia region? Return one date.",
+    "tier": 2,
+    "gold_sql": "SELECT MAX(a.date) AS date\nFROM account AS a\nJOIN district AS d ON a.district_id = d.district_id\nWHERE a.frequency = 'POPLATEK MESICNE'\n  AND d.A3 = 'east Bohemia'",
+    "expected_result": [
+      {
+        "date": "1997-12-22"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_118",
+    "question": "What percentage of the accounts in the west Bohemia region have weekly statements? Give me the percentage.",
+    "tier": 2,
+    "gold_sql": "SELECT ROUND(100.0 * SUM(CASE WHEN a.frequency = 'POPLATEK TYDNE' THEN 1 ELSE 0 END) / COUNT(*), 2) AS percentage\nFROM account AS a\nJOIN district AS d ON a.district_id = d.district_id\nWHERE d.A3 = 'west Bohemia'",
+    "expected_result": [
+      {
+        "percentage": 4.65
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_119",
+    "question": "How many accounts are there in total across the south Bohemia and west Bohemia regions combined? Return one total.",
+    "tier": 2,
+    "gold_sql": "SELECT COUNT(DISTINCT a.account_id) AS total_accounts\nFROM account AS a\nJOIN district AS d ON a.district_id = d.district_id\nWHERE d.A3 IN ('south Bohemia', 'west Bohemia')",
+    "expected_result": [
+      {
+        "total_accounts": 800
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_120",
+    "question": "In the north Bohemia region, are there more accounts with weekly statements or with monthly statements? Tell me which of the two is larger.",
+    "tier": 2,
+    "gold_sql": "SELECT CASE WHEN SUM(CASE WHEN a.frequency = 'POPLATEK TYDNE' THEN 1 ELSE 0 END) > SUM(CASE WHEN a.frequency = 'POPLATEK MESICNE' THEN 1 ELSE 0 END) THEN 'weekly statements' WHEN SUM(CASE WHEN a.frequency = 'POPLATEK TYDNE' THEN 1 ELSE 0 END) < SUM(CASE WHEN a.frequency = 'POPLATEK MESICNE' THEN 1 ELSE 0 END) THEN 'monthly statements' ELSE 'tie' END AS larger_statement_frequency FROM account AS a JOIN district AS d ON a.district_id = d.district_id WHERE d.A3 = 'north Bohemia'",
+    "expected_result": [
+      {
+        "larger_statement_frequency": "monthly statements"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/3"
+  },
+  {
+    "id": "g_121",
+    "question": "How many of our clients are women living in the Prague region? Return a single count.",
+    "tier": 2,
+    "gold_sql": "SELECT COUNT(*) AS count FROM client c JOIN district d ON c.district_id = d.district_id WHERE c.gender = 'F' AND d.A3 = 'Prague'",
+    "expected_result": [
+      {
+        "count": 324
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_122",
+    "question": "How many clients were born between 1 January 1960 and 31 December 1969 and live in the central Bohemia region? Return a single count.",
+    "tier": 2,
+    "gold_sql": "SELECT COUNT(DISTINCT c.client_id) AS client_count\nFROM client AS c\nJOIN district AS d ON c.district_id = d.district_id\nWHERE c.birth_date BETWEEN '1960-01-01' AND '1969-12-31'\n  AND d.A3 = 'central Bohemia'",
+    "expected_result": [
+      {
+        "client_count": 116
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_123",
+    "question": "What percentage of the clients living in the south Moravia region are women? Return a single percentage.",
+    "tier": 2,
+    "gold_sql": "SELECT ROUND(100.0 * COUNT(DISTINCT CASE WHEN c.gender = 'F' THEN c.client_id END) / COUNT(DISTINCT c.client_id), 2) AS percentage\nFROM client AS c\nJOIN district AS d ON c.district_id = d.district_id\nWHERE d.A3 = 'south Moravia'",
+    "expected_result": [
+      {
+        "percentage": 50.59
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_124",
+    "question": "What is the birth date of the oldest client living in the Liberec district? Return a single date.",
+    "tier": 2,
+    "gold_sql": "SELECT MIN(c.birth_date) AS birth_date\nFROM client AS c\nJOIN district AS d ON d.district_id = c.district_id\nWHERE d.A2 = 'Liberec'",
+    "expected_result": [
+      {
+        "birth_date": "1914-06-14"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_125",
+    "question": "How many clients born after 31 December 1979 are account owners? Return a single count.",
+    "tier": 2,
+    "gold_sql": "SELECT COUNT(DISTINCT c.client_id) AS owner_count\nFROM client AS c\nJOIN disp AS d ON d.client_id = c.client_id\nWHERE c.birth_date > '1979-12-31'\n  AND d.type = 'OWNER'",
+    "expected_result": [
+      {
+        "owner_count": 145
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_126",
+    "question": "What percentage of clients who are authorized users (disponents) on an account are men? Return a single percentage.",
+    "tier": 2,
+    "gold_sql": "SELECT ROUND(100.0 * COUNT(DISTINCT CASE WHEN c.gender = 'M' THEN c.client_id END) / COUNT(DISTINCT c.client_id), 2) AS percentage\nFROM disp d\nJOIN client c ON c.client_id = d.client_id\nWHERE d.type = 'DISPONENT'",
+    "expected_result": [
+      {
+        "percentage": 49.71
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_127",
+    "question": "Considering only the districts in the west Bohemia region that are home to at least one client, what is their combined number of inhabitants? Return a single total.",
+    "tier": 2,
+    "gold_sql": "SELECT SUM(CAST(d.A4 AS INTEGER)) AS combined_number_of_inhabitants\nFROM district AS d\nWHERE d.A3 = 'west Bohemia'\n  AND EXISTS (\n    SELECT 1\n    FROM client AS c\n    WHERE c.district_id = d.district_id\n  )",
+    "expected_result": [
+      {
+        "combined_number_of_inhabitants": 859306
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_128",
+    "question": "Among districts that are home to at least one client, which district had the lowest unemployment rate in 1995? Return the district name and that rate.",
+    "tier": 2,
+    "gold_sql": "SELECT d.A2 AS district_name, d.A12 AS unemployment_rate_1995\nFROM district AS d\nWHERE EXISTS (\n  SELECT 1\n  FROM client AS c\n  WHERE c.district_id = d.district_id\n)\nORDER BY d.A12 ASC\nLIMIT 1",
+    "expected_result": [
+      {
+        "district_name": "Jesenik",
+        "unemployment_rate_1995": null
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_129",
+    "question": "What is the birth date of the youngest male client who is an authorized user (disponent) on an account? Return a single date.",
+    "tier": 2,
+    "gold_sql": "SELECT MAX(c.birth_date) AS birth_date\nFROM client AS c\nJOIN disp AS d ON d.client_id = c.client_id\nWHERE c.gender = 'M'\n  AND d.type = 'DISPONENT'",
+    "expected_result": [
+      {
+        "birth_date": "1986-08-13"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_130",
+    "question": "How many loans on accounts with monthly statements are finished with no problems? Return a single count.",
+    "tier": 2,
+    "gold_sql": "SELECT COUNT(*) AS loan_count FROM loan JOIN account ON loan.account_id = account.account_id WHERE account.frequency = 'POPLATEK MESICNE' AND loan.status = 'A'",
+    "expected_result": [
+      {
+        "loan_count": 168
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_131",
+    "question": "What is the total approved amount, in dollars, of all loans that are still running and in good standing on accounts with weekly statements? Return one total.",
+    "tier": 2,
+    "gold_sql": "SELECT SUM(l.amount) AS total_approved_amount\nFROM loan AS l\nJOIN account AS a ON a.account_id = l.account_id\nWHERE l.status = 'C'\n  AND a.frequency = 'POPLATEK TYDNE'",
+    "expected_result": [
+      {
+        "total_approved_amount": 10385712
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_132",
+    "question": "What is the average monthly payment for loans with a 48-month duration on accounts with monthly statements? Return one average.",
+    "tier": 2,
+    "gold_sql": "SELECT AVG(l.payments) AS avg_monthly_payment\nFROM loan AS l\nJOIN account AS a ON a.account_id = l.account_id\nWHERE l.duration = 48\n  AND a.frequency = 'POPLATEK MESICNE'",
+    "expected_result": [
+      {
+        "avg_monthly_payment": 4085.280701754386
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_133",
+    "question": "Among loans that finished with the loan not being paid back, on accounts opened before 1995, what is the largest approved loan amount? Return one amount.",
+    "tier": 2,
+    "gold_sql": "SELECT MAX(l.amount) AS max_amount FROM loan AS l JOIN account AS a ON l.account_id = a.account_id WHERE l.status = 'B' AND a.date < '1995-01-01'",
+    "expected_result": [
+      {
+        "max_amount": 464520
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_134",
+    "question": "What percentage of loans on accounts with per-transaction statements finished with the loan not being fully paid? Return one percentage.",
+    "tier": 2,
+    "gold_sql": "SELECT ROUND(100.0 * SUM(CASE WHEN l.status = 'B' THEN 1 ELSE 0 END) / COUNT(*), 2) AS percentage FROM loan l JOIN account a ON l.account_id = a.account_id WHERE a.frequency = 'POPLATEK PO OBRATU'",
+    "expected_result": [
+      {
+        "percentage": 9.38
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_135",
+    "question": "How many loans were approved during 1997 on accounts with weekly statements? Return a single count.",
+    "tier": 2,
+    "gold_sql": "SELECT COUNT(*) AS loan_count FROM loan l JOIN account a ON l.account_id = a.account_id WHERE l.date >= '1997-01-01' AND l.date <= '1997-12-31' AND a.frequency = 'POPLATEK TYDNE'",
+    "expected_result": [
+      {
+        "loan_count": 19
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_136",
+    "question": "What is the earliest loan approval date among loans on accounts with per-transaction statements? Return one date.",
+    "tier": 2,
+    "gold_sql": "SELECT MIN(l.date) AS earliest_loan_date FROM loan l JOIN account a ON l.account_id = a.account_id WHERE a.frequency = 'POPLATEK PO OBRATU'",
+    "expected_result": [
+      {
+        "earliest_loan_date": "1993-12-08"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_137",
+    "question": "For accounts opened during 1996, how many loans are still running and in good standing, and how many are still running with the client in debt? Give both counts.",
+    "tier": 2,
+    "gold_sql": "SELECT COUNT(DISTINCT CASE WHEN l.status = 'C' THEN l.loan_id END) AS running_good_loans, COUNT(DISTINCT CASE WHEN l.status = 'D' THEN l.loan_id END) AS running_in_debt_loans FROM loan AS l JOIN account AS a ON a.account_id = l.account_id WHERE a.date >= '1996-01-01' AND a.date < '1997-01-01' AND l.status IN ('C', 'D')",
+    "expected_result": [
+      {
+        "running_good_loans": 173,
+        "running_in_debt_loans": 20
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_138",
+    "question": "What is the total dollar amount of all transactions characterized as loan payments made from accounts with monthly statements? Return one total.",
+    "tier": 2,
+    "gold_sql": "SELECT SUM(t.amount) AS total_amount\nFROM trans AS t\nJOIN account AS a ON t.account_id = a.account_id\nWHERE t.k_symbol = 'UVER'\n  AND a.frequency = 'POPLATEK MESICNE'",
+    "expected_result": [
+      {
+        "total_amount": 42542152
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_139",
+    "question": "How many transactions characterized as loan payments were recorded on accounts opened during 1995? Return a single count.",
+    "tier": 2,
+    "gold_sql": "SELECT COUNT(*) AS transaction_count\nFROM trans AS t\nJOIN account AS a ON t.account_id = a.account_id\nWHERE t.k_symbol = 'UVER'\n  AND a.date >= '1995-01-01'\n  AND a.date < '1996-01-01'",
+    "expected_result": [
+      {
+        "transaction_count": 2725
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_140",
+    "question": "What is the average debited amount of standing orders set up for loan payments on accounts with weekly statements? Return one average.",
+    "tier": 2,
+    "gold_sql": "SELECT AVG(o.amount) AS avg_debited_amount FROM \"order\" AS o JOIN account AS a ON a.account_id = o.account_id WHERE o.k_symbol = 'UVER' AND a.frequency = 'POPLATEK TYDNE'",
+    "expected_result": [
+      {
+        "avg_debited_amount": 4603.951546391752
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_141",
+    "question": "List the names of the five districts with the most accounts, along with the number of accounts in each, ordered from most accounts to fewest.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A2 AS district_name, COUNT(a.account_id) AS account_count\nFROM account a\nJOIN district d ON a.district_id = d.district_id\nGROUP BY d.district_id, d.A2\nORDER BY account_count DESC\nLIMIT 5",
+    "expected_result": [
+      {
+        "district_name": "Hl.m. Praha",
+        "account_count": 554
+      },
+      {
+        "district_name": "Karvina",
+        "account_count": 152
+      },
+      {
+        "district_name": "Ostrava - mesto",
+        "account_count": 135
+      },
+      {
+        "district_name": "Brno - mesto",
+        "account_count": 128
+      },
+      {
+        "district_name": "Zlin",
+        "account_count": 92
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_142",
+    "question": "Which region has more accounts: north Bohemia or south Bohemia? Return the name of the region with more accounts and its account count.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A3 AS region, COUNT(a.account_id) AS account_count\nFROM account AS a\nJOIN district AS d ON a.district_id = d.district_id\nWHERE d.A3 IN ('north Bohemia', 'south Bohemia')\nGROUP BY d.A3\nORDER BY account_count DESC\nLIMIT 1",
+    "expected_result": [
+      {
+        "region": "north Bohemia",
+        "account_count": 457
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_143",
+    "question": "In the Prague region, which is more common: accounts with weekly statements or accounts with statements after every transaction? Return the more common type and how many accounts have it.",
+    "tier": 3,
+    "gold_sql": "SELECT a.frequency, COUNT(*) AS account_count FROM account a JOIN district d ON a.district_id = d.district_id WHERE d.A3 = 'Prague' AND a.frequency IN ('POPLATEK TYDNE', 'POPLATEK PO OBRATU') GROUP BY a.frequency ORDER BY account_count DESC LIMIT 1",
+    "expected_result": [
+      {
+        "frequency": "POPLATEK TYDNE",
+        "account_count": 36
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/3"
+  },
+  {
+    "id": "g_144",
+    "question": "On average, how many accounts does a district in the west Bohemia region have? Return a single number rounded to one decimal place.",
+    "tier": 3,
+    "gold_sql": "SELECT ROUND(AVG(account_count), 1) AS avg_accounts_per_district\nFROM (\n  SELECT d.district_id, COUNT(a.account_id) AS account_count\n  FROM district AS d\n  LEFT JOIN account AS a\n    ON a.district_id = d.district_id\n  WHERE d.A3 = 'west Bohemia'\n  GROUP BY d.district_id\n) AS district_counts",
+    "expected_result": [
+      {
+        "avg_accounts_per_district": 43.0
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_145",
+    "question": "List all eight regions with their client counts. Return eight rows, ordered from the highest count to the lowest, with ties ordered alphabetically by region name.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A3 AS region, COUNT(c.client_id) AS client_count\nFROM district d\nLEFT JOIN client c ON c.district_id = d.district_id\nGROUP BY d.A3\nORDER BY client_count DESC, region ASC",
+    "expected_result": [
+      {
+        "region": "south Moravia",
+        "client_count": 937
+      },
+      {
+        "region": "north Moravia",
+        "client_count": 920
+      },
+      {
+        "region": "central Bohemia",
+        "client_count": 664
+      },
+      {
+        "region": "Prague",
+        "client_count": 663
+      },
+      {
+        "region": "east Bohemia",
+        "client_count": 660
+      },
+      {
+        "region": "north Bohemia",
+        "client_count": 561
+      },
+      {
+        "region": "west Bohemia",
+        "client_count": 515
+      },
+      {
+        "region": "south Bohemia",
+        "client_count": 449
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_146",
+    "question": "List the five districts with the most clients, showing the district name and client count. Return five rows, ordered from the highest count to the lowest, with ties ordered alphabetically by district name.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A2 AS district_name, COUNT(c.client_id) AS client_count FROM client c JOIN district d ON c.district_id = d.district_id GROUP BY d.district_id, d.A2 ORDER BY client_count DESC, d.A2 ASC LIMIT 5",
+    "expected_result": [
+      {
+        "district_name": "Hl.m. Praha",
+        "client_count": 663
+      },
+      {
+        "district_name": "Ostrava - mesto",
+        "client_count": 180
+      },
+      {
+        "district_name": "Karvina",
+        "client_count": 169
+      },
+      {
+        "district_name": "Brno - mesto",
+        "client_count": 155
+      },
+      {
+        "district_name": "Zlin",
+        "client_count": 109
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_147",
+    "question": "On January 1, 1999, which region had the lowest average client age, using completed years? Return the region name and the average age rounded to one decimal place; if there is a tie, choose the region whose name comes first alphabetically.",
+    "tier": 3,
+    "gold_sql": "WITH ages AS (SELECT d.A3 AS region, CAST(strftime('%Y','1999-01-01') AS INTEGER) - CAST(strftime('%Y', c.birth_date) AS INTEGER) - CASE WHEN strftime('%m-%d', c.birth_date) > '01-01' THEN 1 ELSE 0 END AS age FROM client AS c JOIN district AS d ON d.district_id = c.district_id), avg_ages AS (SELECT region, AVG(age) AS exact_avg_age FROM ages GROUP BY region) SELECT region, ROUND(exact_avg_age, 1) AS avg_age FROM avg_ages ORDER BY exact_avg_age ASC, region ASC LIMIT 1",
+    "expected_result": [
+      {
+        "region": "east Bohemia",
+        "avg_age": 44.4
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_148",
+    "question": "Which region has more accounts with weekly statements: south Moravia or north Moravia? Give the count for each region, labeled.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A3 AS region, COUNT(DISTINCT a.account_id) AS account_count FROM account a JOIN district d ON a.district_id = d.district_id WHERE a.frequency = 'POPLATEK TYDNE' AND d.A3 IN ('south Moravia', 'north Moravia') GROUP BY d.A3 ORDER BY account_count DESC",
+    "expected_result": [
+      {
+        "region": "north Moravia",
+        "account_count": 36
+      },
+      {
+        "region": "south Moravia",
+        "account_count": 35
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_149",
+    "question": "List the five districts with the most accounts that receive monthly statements. Give each district's name and its account count, ordered from highest count to lowest.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A2 AS district_name, COUNT(a.account_id) AS account_count FROM account a JOIN district d ON a.district_id = d.district_id WHERE a.frequency = 'POPLATEK MESICNE' GROUP BY d.A2 ORDER BY account_count DESC LIMIT 5",
+    "expected_result": [
+      {
+        "district_name": "Hl.m. Praha",
+        "account_count": 509
+      },
+      {
+        "district_name": "Karvina",
+        "account_count": 145
+      },
+      {
+        "district_name": "Ostrava - mesto",
+        "account_count": 124
+      },
+      {
+        "district_name": "Brno - mesto",
+        "account_count": 121
+      },
+      {
+        "district_name": "Zlin",
+        "account_count": 81
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_150",
+    "question": "Which district has the most accounts held at its branches? Return one district name and its account count; if several districts are tied, return the one whose name comes first alphabetically.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A2 AS district_name, COUNT(a.account_id) AS account_count\nFROM account a\nJOIN district d ON a.district_id = d.district_id\nGROUP BY d.district_id, d.A2\nORDER BY account_count DESC, d.A2 ASC\nLIMIT 1",
+    "expected_result": [
+      {
+        "district_name": "Hl.m. Praha",
+        "account_count": 554
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_151",
+    "question": "List the five districts with the most accounts held at their branches. Return exactly five rows with the district name and account count, ordered by account count from highest to lowest and by district name alphabetically when counts are tied.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A2 AS district_name, COUNT(a.account_id) AS account_count\nFROM account AS a\nJOIN district AS d ON d.district_id = a.district_id\nGROUP BY d.district_id, d.A2\nORDER BY account_count DESC, district_name ASC\nLIMIT 5",
+    "expected_result": [
+      {
+        "district_name": "Hl.m. Praha",
+        "account_count": 554
+      },
+      {
+        "district_name": "Karvina",
+        "account_count": 152
+      },
+      {
+        "district_name": "Ostrava - mesto",
+        "account_count": 135
+      },
+      {
+        "district_name": "Brno - mesto",
+        "account_count": 128
+      },
+      {
+        "district_name": "Zlin",
+        "account_count": 92
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_152",
+    "question": "List all eight regions with the number of accounts held at branches in each. Return exactly eight rows with the region name and account count, ordered by account count from highest to lowest and by region name alphabetically when counts are tied.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A3 AS region, COUNT(a.account_id) AS account_count FROM account a JOIN district d ON a.district_id = d.district_id GROUP BY d.A3 ORDER BY account_count DESC, d.A3 ASC",
+    "expected_result": [
+      {
+        "region": "north Moravia",
+        "account_count": 793
+      },
+      {
+        "region": "south Moravia",
+        "account_count": 778
+      },
+      {
+        "region": "central Bohemia",
+        "account_count": 574
+      },
+      {
+        "region": "Prague",
+        "account_count": 554
+      },
+      {
+        "region": "east Bohemia",
+        "account_count": 544
+      },
+      {
+        "region": "north Bohemia",
+        "account_count": 457
+      },
+      {
+        "region": "west Bohemia",
+        "account_count": 430
+      },
+      {
+        "region": "south Bohemia",
+        "account_count": 370
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_153",
+    "question": "Compare the number of accounts held at branches in the North Moravia region with the number in the South Moravia region. Return the two counts in that order, state which region has more accounts, and give the difference; if they are equal, say so and give a difference of zero.",
+    "tier": 3,
+    "gold_sql": "WITH counts AS (SELECT COUNT(DISTINCT CASE WHEN d.A3 = 'north Moravia' THEN a.account_id END) AS north_moravia_accounts, COUNT(DISTINCT CASE WHEN d.A3 = 'south Moravia' THEN a.account_id END) AS south_moravia_accounts FROM account a JOIN district d ON a.district_id = d.district_id WHERE d.A3 IN ('north Moravia', 'south Moravia')) SELECT north_moravia_accounts, south_moravia_accounts, CASE WHEN north_moravia_accounts > south_moravia_accounts THEN 'north Moravia' WHEN south_moravia_accounts > north_moravia_accounts THEN 'south Moravia' ELSE 'equal' END AS region_with_more_accounts, ABS(north_moravia_accounts - south_moravia_accounts) AS difference FROM counts",
+    "expected_result": [
+      {
+        "north_moravia_accounts": 793,
+        "south_moravia_accounts": 778,
+        "region_with_more_accounts": "north Moravia",
+        "difference": 15
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/3"
+  },
+  {
+    "id": "g_154",
+    "question": "Which region has more accounts, north Moravia or south Moravia, and by how many? Give the region name and the difference.",
+    "tier": 3,
+    "gold_sql": "WITH c AS (\n  SELECT d.A3 AS region, COUNT(a.account_id) AS account_count\n  FROM account a\n  JOIN district d ON a.district_id = d.district_id\n  WHERE d.A3 IN ('north Moravia', 'south Moravia')\n  GROUP BY d.A3\n), m AS (\n  SELECT MAX(account_count) AS max_count, MIN(account_count) AS min_count\n  FROM c\n)\nSELECT c.region, (m.max_count - m.min_count) AS difference\nFROM c\nCROSS JOIN m\nWHERE c.account_count = m.max_count",
+    "expected_result": [
+      {
+        "region": "north Moravia",
+        "difference": 15
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_155",
+    "question": "Which five districts have the most accounts? List the five district names in order from most accounts to fewest.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A2 AS district_name FROM account a JOIN district d ON a.district_id = d.district_id GROUP BY d.A2 ORDER BY COUNT(a.account_id) DESC LIMIT 5",
+    "expected_result": [
+      {
+        "district_name": "Hl.m. Praha"
+      },
+      {
+        "district_name": "Karvina"
+      },
+      {
+        "district_name": "Ostrava - mesto"
+      },
+      {
+        "district_name": "Brno - mesto"
+      },
+      {
+        "district_name": "Zlin"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_156",
+    "question": "Rank all eight regions by how many accounts they have. List each region together with its account count, ordered from most accounts to fewest.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A3 AS region, COUNT(a.account_id) AS account_count\nFROM district AS d\nLEFT JOIN account AS a ON a.district_id = d.district_id\nGROUP BY d.A3\nORDER BY account_count DESC, region ASC",
+    "expected_result": [
+      {
+        "region": "north Moravia",
+        "account_count": 793
+      },
+      {
+        "region": "south Moravia",
+        "account_count": 778
+      },
+      {
+        "region": "central Bohemia",
+        "account_count": 574
+      },
+      {
+        "region": "Prague",
+        "account_count": 554
+      },
+      {
+        "region": "east Bohemia",
+        "account_count": 544
+      },
+      {
+        "region": "north Bohemia",
+        "account_count": 457
+      },
+      {
+        "region": "west Bohemia",
+        "account_count": 430
+      },
+      {
+        "region": "south Bohemia",
+        "account_count": 370
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_157",
+    "question": "On average, how many accounts does a district in the south Bohemia region have? Return a single average number.",
+    "tier": 3,
+    "gold_sql": "SELECT AVG(cnt) AS avg_accounts FROM (SELECT COUNT(a.account_id) AS cnt FROM district d LEFT JOIN account a ON a.district_id = d.district_id WHERE d.A3 = 'south Bohemia' GROUP BY d.district_id)",
+    "expected_result": [
+      {
+        "avg_accounts": 46.25
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_158",
+    "question": "Which district has the most accounts with per-transaction statements, meaning a statement is issued for every transaction? Give the single district name.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A2 AS district_name FROM account a JOIN district d ON a.district_id = d.district_id WHERE a.frequency = 'POPLATEK PO OBRATU' GROUP BY d.district_id ORDER BY COUNT(a.account_id) DESC LIMIT 1",
+    "expected_result": [
+      {
+        "district_name": "Hl.m. Praha"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_159",
+    "question": "Which region has the fewest accounts? Give the region name.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A3 AS region\nFROM account AS a\nJOIN district AS d ON a.district_id = d.district_id\nGROUP BY d.A3\nORDER BY COUNT(*) ASC\nLIMIT 1",
+    "expected_result": [
+      {
+        "region": "south Bohemia"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_160",
+    "question": "Among clients living in the Ostrava - mesto district, are there more men or more women, and by how many? Return which group is larger and the size of the difference.",
+    "tier": 3,
+    "gold_sql": "WITH counts AS (\n  SELECT\n    COUNT(DISTINCT CASE WHEN c.gender = 'M' THEN c.client_id END) AS men,\n    COUNT(DISTINCT CASE WHEN c.gender = 'F' THEN c.client_id END) AS women\n  FROM client AS c\n  JOIN district AS d ON c.district_id = d.district_id\n  WHERE d.A2 = 'Ostrava - mesto'\n)\nSELECT\n  CASE\n    WHEN men > women THEN 'men'\n    WHEN women > men THEN 'women'\n    ELSE 'equal'\n  END AS larger_group,\n  ABS(men - women) AS difference\nFROM counts",
+    "expected_result": [
+      {
+        "larger_group": "men",
+        "difference": 12
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_161",
+    "question": "Which three districts are home to the most clients? Return a list of the three district names with their client counts, ordered from most clients to fewest.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A2 AS district_name, COUNT(c.client_id) AS client_count FROM client c JOIN district d ON c.district_id = d.district_id GROUP BY d.district_id, d.A2 ORDER BY client_count DESC LIMIT 3",
+    "expected_result": [
+      {
+        "district_name": "Hl.m. Praha",
+        "client_count": 663
+      },
+      {
+        "district_name": "Ostrava - mesto",
+        "client_count": 180
+      },
+      {
+        "district_name": "Karvina",
+        "client_count": 169
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_162",
+    "question": "Among the districts in the north Bohemia region, which one is home to the most female clients? Return the district name and its number of female clients.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A2 AS district_name, COUNT(c.client_id) AS female_clients\nFROM client AS c\nJOIN district AS d ON c.district_id = d.district_id\nWHERE d.A3 = 'north Bohemia' AND c.gender = 'F'\nGROUP BY d.district_id, d.A2\nORDER BY female_clients DESC\nLIMIT 1",
+    "expected_result": [
+      {
+        "district_name": "Decin",
+        "female_clients": 34
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_163",
+    "question": "What is the average birth year of female clients who are account owners? Return a single number.",
+    "tier": 3,
+    "gold_sql": "SELECT AVG(CAST(SUBSTR(birth_date, 1, 4) AS INTEGER)) AS avg_birth_year\nFROM (\n  SELECT DISTINCT c.client_id, c.birth_date\n  FROM client c\n  JOIN disp d ON d.client_id = c.client_id\n  WHERE c.gender = 'F' AND d.type = 'OWNER'\n) AS female_owners",
+    "expected_result": [
+      {
+        "avg_birth_year": 1954.853713768116
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_164",
+    "question": "List all eight regions with the number of clients living in each, ordered from most clients to fewest. Return the eight region names with their client counts.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A3 AS region, COUNT(c.client_id) AS client_count\nFROM client c\nJOIN district d ON c.district_id = d.district_id\nGROUP BY d.A3\nORDER BY client_count DESC",
+    "expected_result": [
+      {
+        "region": "south Moravia",
+        "client_count": 937
+      },
+      {
+        "region": "north Moravia",
+        "client_count": 920
+      },
+      {
+        "region": "central Bohemia",
+        "client_count": 664
+      },
+      {
+        "region": "Prague",
+        "client_count": 663
+      },
+      {
+        "region": "east Bohemia",
+        "client_count": 660
+      },
+      {
+        "region": "north Bohemia",
+        "client_count": 561
+      },
+      {
+        "region": "west Bohemia",
+        "client_count": 515
+      },
+      {
+        "region": "south Bohemia",
+        "client_count": 449
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_165",
+    "question": "List the loan IDs and approved amounts of the five largest loans that are still running with the client in debt, for accounts with monthly statements. Order from largest approved amount to smallest and return exactly five rows.",
+    "tier": 3,
+    "gold_sql": "SELECT l.loan_id, l.amount AS approved_amount\nFROM loan AS l\nJOIN account AS a ON a.account_id = l.account_id\nWHERE l.status = 'D'\n  AND a.frequency = 'POPLATEK MESICNE'\nORDER BY l.amount DESC, l.loan_id ASC\nLIMIT 5",
+    "expected_result": [
+      {
+        "loan_id": 5447,
+        "approved_amount": 541200
+      },
+      {
+        "loan_id": 7142,
+        "approved_amount": 482940
+      },
+      {
+        "loan_id": 6625,
+        "approved_amount": 473280
+      },
+      {
+        "loan_id": 5976,
+        "approved_amount": 465504
+      },
+      {
+        "loan_id": 5731,
+        "approved_amount": 460980
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_166",
+    "question": "Who holds more classic credit cards, account owners or additional authorized users, and by how many cards? Return the group with more cards and the difference.",
+    "tier": 3,
+    "gold_sql": "WITH counts AS (SELECT d.type AS holder_group, COUNT(DISTINCT c.card_id) AS classic_cards FROM card c JOIN disp d ON c.disp_id = d.disp_id WHERE c.type = 'classic' GROUP BY d.type) SELECT CASE WHEN COALESCE(MAX(CASE WHEN holder_group = 'OWNER' THEN classic_cards END), 0) >= COALESCE(MAX(CASE WHEN holder_group = 'DISPONENT' THEN classic_cards END), 0) THEN 'account owners' ELSE 'additional authorized users' END AS group_with_more_cards, ABS(COALESCE(MAX(CASE WHEN holder_group = 'OWNER' THEN classic_cards END), 0) - COALESCE(MAX(CASE WHEN holder_group = 'DISPONENT' THEN classic_cards END), 0)) AS card_difference FROM counts",
+    "expected_result": [
+      {
+        "group_with_more_cards": "account owners",
+        "card_difference": 659
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/3"
+  },
+  {
+    "id": "g_167",
+    "question": "Considering only cards registered to account owners, list each card type along with the number of cards of that type, ordered from the most cards to the fewest. Return all three card types.",
+    "tier": 3,
+    "gold_sql": "WITH all_types(type) AS (\n  SELECT 'classic' UNION ALL SELECT 'gold' UNION ALL SELECT 'junior'\n)\nSELECT t.type AS card_type,\n       COUNT(d.disp_id) AS num_cards\nFROM all_types t\nLEFT JOIN card c\n  ON c.type = t.type\nLEFT JOIN disp d\n  ON d.disp_id = c.disp_id\n AND d.type = 'OWNER'\nGROUP BY t.type\nORDER BY num_cards DESC, t.type ASC",
+    "expected_result": [
+      {
+        "card_type": "classic",
+        "num_cards": 659
+      },
+      {
+        "card_type": "junior",
+        "num_cards": 145
+      },
+      {
+        "card_type": "gold",
+        "num_cards": 88
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_168",
+    "question": "On average, how many credit cards does an account have, counting only accounts that have at least one card? Return the average rounded to two decimal places.",
+    "tier": 3,
+    "gold_sql": "SELECT ROUND(AVG(card_count), 2) AS avg_cards_per_account\nFROM (\n  SELECT d.account_id, COUNT(c.card_id) AS card_count\n  FROM card c\n  JOIN disp d ON c.disp_id = d.disp_id\n  GROUP BY d.account_id\n) AS per_account",
+    "expected_result": [
+      {
+        "avg_cards_per_account": 1.0
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_169",
+    "question": "How many account owners hold more than one credit card? Return a single count.",
+    "tier": 3,
+    "gold_sql": "SELECT COUNT(*) AS owner_count\nFROM (\n  SELECT d.client_id\n  FROM disp AS d\n  JOIN card AS c ON c.disp_id = d.disp_id\n  WHERE d.type = 'OWNER'\n  GROUP BY d.client_id\n  HAVING COUNT(DISTINCT c.card_id) > 1\n) AS t",
+    "expected_result": [
+      {
+        "owner_count": 0
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_170",
+    "question": "In which calendar year were the most gold credit cards issued to account owners, and how many were issued in that year? Return the year and the count.",
+    "tier": 3,
+    "gold_sql": "SELECT strftime('%Y', c.issued) AS issued_year, COUNT(DISTINCT c.card_id) AS gold_card_count\nFROM card AS c\nJOIN disp AS d ON c.disp_id = d.disp_id\nWHERE c.type = 'gold'\n  AND d.type = 'OWNER'\nGROUP BY strftime('%Y', c.issued)\nORDER BY gold_card_count DESC, issued_year ASC\nLIMIT 1",
+    "expected_result": [
+      {
+        "issued_year": "1998",
+        "gold_card_count": 53
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/3"
+  },
+  {
+    "id": "g_171",
+    "question": "For the three accounts with monthly statements that recorded the highest balance right after a transaction, list the account ID and that highest balance, ordered from highest balance to lowest.",
+    "tier": 3,
+    "gold_sql": "SELECT t.account_id, MAX(t.balance) AS highest_balance\nFROM trans AS t\nJOIN account AS a ON t.account_id = a.account_id\nWHERE a.frequency = 'POPLATEK MESICNE'\nGROUP BY t.account_id\nORDER BY highest_balance DESC\nLIMIT 3",
+    "expected_result": [
+      {
+        "account_id": 1029,
+        "highest_balance": 194119
+      },
+      {
+        "account_id": 2176,
+        "highest_balance": 193910
+      },
+      {
+        "account_id": 8856,
+        "highest_balance": 192663
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_172",
+    "question": "During 1997, which moved more money in total through transfers sent to other banks: accounts with monthly statements or accounts with weekly statements? Give both totals and say which group is larger.",
+    "tier": 3,
+    "gold_sql": "WITH totals AS (SELECT COALESCE(SUM(CASE WHEN a.frequency = 'POPLATEK MESICNE' THEN t.amount ELSE 0 END), 0) AS monthly_total, COALESCE(SUM(CASE WHEN a.frequency = 'POPLATEK TYDNE' THEN t.amount ELSE 0 END), 0) AS weekly_total FROM trans AS t JOIN account AS a ON a.account_id = t.account_id WHERE t.operation = 'PREVOD NA UCET' AND t.date BETWEEN '1997-01-01' AND '1997-12-31' AND a.frequency IN ('POPLATEK MESICNE', 'POPLATEK TYDNE')) SELECT monthly_total, weekly_total, CASE WHEN monthly_total > weekly_total THEN 'monthly statements' WHEN weekly_total > monthly_total THEN 'weekly statements' ELSE 'tie' END AS larger_group FROM totals",
+    "expected_result": [
+      {
+        "monthly_total": 165690988,
+        "weekly_total": 11908460,
+        "larger_group": "monthly statements"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/3"
+  },
+  {
+    "id": "g_173",
+    "question": "Which group has more standing orders for leasing: accounts with monthly statements or accounts with weekly statements? Return both counts and say which group is larger.",
+    "tier": 3,
+    "gold_sql": "SELECT a.frequency, COUNT(o.order_id) AS leasing_order_count FROM account AS a JOIN \"order\" AS o ON o.account_id = a.account_id WHERE o.k_symbol = 'LEASING' AND a.frequency IN ('POPLATEK MESICNE', 'POPLATEK TYDNE') GROUP BY a.frequency ORDER BY leasing_order_count DESC",
+    "expected_result": [
+      {
+        "frequency": "POPLATEK MESICNE",
+        "leasing_order_count": 274
+      },
+      {
+        "frequency": "POPLATEK TYDNE",
+        "leasing_order_count": 42
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_174",
+    "question": "For each statement frequency — weekly, monthly, and after every transaction — what is the average amount of a standing order for household payments? Return three rows, one per frequency, ordered from the highest average to the lowest.",
+    "tier": 3,
+    "gold_sql": "SELECT a.frequency, AVG(o.amount) AS avg_amount FROM account AS a JOIN \"order\" AS o ON o.account_id = a.account_id WHERE o.k_symbol = 'SIPO' GROUP BY a.frequency ORDER BY avg_amount DESC",
+    "expected_result": [
+      {
+        "frequency": "POPLATEK PO OBRATU",
+        "avg_amount": 7363.75
+      },
+      {
+        "frequency": "POPLATEK TYDNE",
+        "avg_amount": 6101.59842519685
+      },
+      {
+        "frequency": "POPLATEK MESICNE",
+        "avg_amount": 3858.447249774572
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/3"
+  },
+  {
+    "id": "g_175",
+    "question": "How many new accounts were opened in each region during 1996? List all eight regions with their counts, ordered from the most new accounts to the fewest.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A3 AS region, COUNT(DISTINCT a.account_id) AS new_accounts\nFROM district AS d\nLEFT JOIN account AS a\n  ON a.district_id = d.district_id\n AND a.date >= '1996-01-01'\n AND a.date < '1997-01-01'\nGROUP BY d.A3\nORDER BY new_accounts DESC, region ASC",
+    "expected_result": [
+      {
+        "region": "north Moravia",
+        "new_accounts": 240
+      },
+      {
+        "region": "south Moravia",
+        "new_accounts": 225
+      },
+      {
+        "region": "central Bohemia",
+        "new_accounts": 191
+      },
+      {
+        "region": "east Bohemia",
+        "new_accounts": 171
+      },
+      {
+        "region": "Prague",
+        "new_accounts": 159
+      },
+      {
+        "region": "north Bohemia",
+        "new_accounts": 147
+      },
+      {
+        "region": "west Bohemia",
+        "new_accounts": 121
+      },
+      {
+        "region": "south Bohemia",
+        "new_accounts": 109
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_176",
+    "question": "Considering only loans that are finished with no problems, which region has the highest average approved loan amount? Return the region's name and the average amount.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A3 AS region, AVG(l.amount) AS avg_amount FROM loan l JOIN account a ON l.account_id = a.account_id JOIN district d ON a.district_id = d.district_id WHERE l.status = 'A' GROUP BY d.A3 ORDER BY avg_amount DESC LIMIT 1",
+    "expected_result": [
+      {
+        "region": "west Bohemia",
+        "avg_amount": 108847.76470588235
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_177",
+    "question": "How many gold credit cards were issued to owners of accounts based in the Prague region? Return a single count.",
+    "tier": 3,
+    "gold_sql": "SELECT COUNT(DISTINCT card.card_id) AS gold_card_count\nFROM card\nJOIN disp ON card.disp_id = disp.disp_id\nJOIN account ON disp.account_id = account.account_id\nJOIN district ON account.district_id = district.district_id\nWHERE card.type = 'gold'\n  AND disp.type = 'OWNER'\n  AND district.A3 = 'Prague'",
+    "expected_result": [
+      {
+        "gold_card_count": 10
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_178",
+    "question": "Compare credit-card cash withdrawals from accounts based in the Prague region with those from accounts based in the central Bohemia region: give the total amount withdrawn in each region and say which region's total is larger.",
+    "tier": 3,
+    "gold_sql": "WITH region_totals AS (\n  SELECT\n    COALESCE(SUM(CASE WHEN d.A3 = 'Prague' THEN t.amount END), 0) AS prague_total,\n    COALESCE(SUM(CASE WHEN d.A3 = 'central Bohemia' THEN t.amount END), 0) AS central_bohemia_total\n  FROM trans t\n  JOIN account a ON t.account_id = a.account_id\n  JOIN district d ON a.district_id = d.district_id\n  WHERE t.operation = 'VYBER KARTOU'\n    AND d.A3 IN ('Prague', 'central Bohemia')\n)\nSELECT\n  prague_total,\n  central_bohemia_total,\n  CASE\n    WHEN prague_total > central_bohemia_total THEN 'Prague'\n    WHEN central_bohemia_total > prague_total THEN 'central Bohemia'\n    ELSE 'tie'\n  END AS larger_region\nFROM region_totals",
+    "expected_result": [
+      {
+        "prague_total": 2242900,
+        "central_bohemia_total": 2108100,
+        "larger_region": "Prague"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/3"
+  },
+  {
+    "id": "g_179",
+    "question": "What percentage of accounts are billed weekly in the south Moravia region, and how does that compare with the south Bohemia region? Give both percentages rounded to one decimal place and name the region with the higher share.",
+    "tier": 3,
+    "gold_sql": "WITH regional AS (SELECT d.A3 AS region, ROUND(100.0 * SUM(CASE WHEN a.frequency = 'POPLATEK TYDNE' THEN 1 ELSE 0 END) / COUNT(*), 1) AS weekly_pct FROM account a JOIN district d ON a.district_id = d.district_id WHERE d.A3 IN ('south Moravia', 'south Bohemia') GROUP BY d.A3) SELECT MAX(CASE WHEN region = 'south Moravia' THEN weekly_pct END) AS south_moravia_weekly_pct, MAX(CASE WHEN region = 'south Bohemia' THEN weekly_pct END) AS south_bohemia_weekly_pct, CASE WHEN MAX(CASE WHEN region = 'south Moravia' THEN weekly_pct END) > MAX(CASE WHEN region = 'south Bohemia' THEN weekly_pct END) THEN 'south Moravia' WHEN MAX(CASE WHEN region = 'south Bohemia' THEN weekly_pct END) > MAX(CASE WHEN region = 'south Moravia' THEN weekly_pct END) THEN 'south Bohemia' ELSE 'tie' END AS higher_share_region FROM regional",
+    "expected_result": [
+      {
+        "south_moravia_weekly_pct": 4.5,
+        "south_bohemia_weekly_pct": 6.2,
+        "higher_share_region": "south Bohemia"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_180",
+    "question": "Which five districts have the most accounts carrying a running loan on which the client is currently in debt? List the district names with their counts, most accounts first.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A2 AS district_name, COUNT(DISTINCT l.account_id) AS account_count\nFROM loan AS l\nJOIN account AS a ON a.account_id = l.account_id\nJOIN district AS d ON d.district_id = a.district_id\nWHERE l.status = 'D'\nGROUP BY d.district_id, d.A2\nORDER BY account_count DESC, district_name ASC\nLIMIT 5",
+    "expected_result": [
+      {
+        "district_name": "Hl.m. Praha",
+        "account_count": 4
+      },
+      {
+        "district_name": "Brno - mesto",
+        "account_count": 3
+      },
+      {
+        "district_name": "Karvina",
+        "account_count": 3
+      },
+      {
+        "district_name": "Svitavy",
+        "account_count": 3
+      },
+      {
+        "district_name": "Beroun",
+        "account_count": 2
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_181",
+    "question": "Among districts that are home to at least 50 accounts, which one has the highest average salary? Return the district name and its average salary.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A2 AS district_name, d.A11 AS average_salary FROM district d JOIN account a ON a.district_id = d.district_id GROUP BY d.district_id, d.A2, d.A11 HAVING COUNT(DISTINCT a.account_id) >= 50 ORDER BY d.A11 DESC LIMIT 1",
+    "expected_result": [
+      {
+        "district_name": "Hl.m. Praha",
+        "average_salary": 12541
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_182",
+    "question": "Which district has the most accounts per 10,000 inhabitants? Return the district name and the accounts-per-10,000-inhabitants figure rounded to one decimal place.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A2 AS district_name, ROUND(COUNT(a.account_id) * 10000.0 / CAST(d.A4 AS REAL), 1) AS accounts_per_10000_inhabitants FROM account AS a JOIN district AS d ON a.district_id = d.district_id GROUP BY d.district_id, d.A2, d.A4 ORDER BY accounts_per_10000_inhabitants DESC LIMIT 1",
+    "expected_result": [
+      {
+        "district_name": "Jesenik",
+        "accounts_per_10000_inhabitants": 11.2
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_183",
+    "question": "Rank regions by the total amount sent through household-payment standing orders from accounts based there. Give the top three regions with their totals, largest first.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A3 AS region, SUM(o.amount) AS total_amount\nFROM \"order\" AS o\nJOIN account AS a ON a.account_id = o.account_id\nJOIN district AS d ON d.district_id = a.district_id\nWHERE o.k_symbol = 'SIPO'\nGROUP BY d.A3\nORDER BY total_amount DESC\nLIMIT 3",
+    "expected_result": [
+      {
+        "region": "north Moravia",
+        "total_amount": 2496116.0
+      },
+      {
+        "region": "south Moravia",
+        "total_amount": 2324880.0
+      },
+      {
+        "region": "central Bohemia",
+        "total_amount": 1749546.0
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_184",
+    "question": "How many accounts in the north Bohemia region are owned by a woman? Return a single count.",
+    "tier": 3,
+    "gold_sql": "SELECT COUNT(DISTINCT a.account_id) AS account_count\nFROM account AS a\nJOIN district AS d ON d.district_id = a.district_id\nJOIN disp AS di ON di.account_id = a.account_id AND di.type = 'OWNER'\nJOIN client AS c ON c.client_id = di.client_id AND c.gender = 'F'\nWHERE d.A3 = 'north Bohemia'",
+    "expected_result": [
+      {
+        "account_count": 237
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_185",
+    "question": "Which region has the highest simple average 1996 unemployment rate across its districts, and how many accounts are based in that region? Return the region name, the average rate, and the account count.",
+    "tier": 3,
+    "gold_sql": "WITH region_avg AS (\n  SELECT A3 AS region, AVG(A13) AS avg_rate\n  FROM district\n  GROUP BY A3\n  ORDER BY avg_rate DESC\n  LIMIT 1\n)\nSELECT r.region, r.avg_rate, COUNT(a.account_id) AS account_count\nFROM region_avg r\nJOIN district d ON d.A3 = r.region\nLEFT JOIN account a ON a.district_id = d.district_id\nGROUP BY r.region, r.avg_rate",
+    "expected_result": [
+      {
+        "region": "north Bohemia",
+        "avg_rate": 5.857,
+        "account_count": 457
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_186",
+    "question": "In the west Bohemia region, rank the three billing styles — monthly, weekly, and pay-per-transaction — by number of accounts. List each style with its count, most common first.",
+    "tier": 3,
+    "gold_sql": "SELECT a.frequency, COUNT(*) AS account_count FROM account a JOIN district d ON a.district_id = d.district_id WHERE d.A3 = 'west Bohemia' GROUP BY a.frequency ORDER BY account_count DESC",
+    "expected_result": [
+      {
+        "frequency": "POPLATEK MESICNE",
+        "account_count": 403
+      },
+      {
+        "frequency": "POPLATEK TYDNE",
+        "account_count": 20
+      },
+      {
+        "frequency": "POPLATEK PO OBRATU",
+        "account_count": 7
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_187",
+    "question": "Which three districts received the largest total of old-age pension payments into their accounts during 1996? List the district names with their totals, largest first.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A2 AS district_name, SUM(t.amount) AS total_old_age_pension_payments\nFROM trans AS t\nJOIN account AS a ON a.account_id = t.account_id\nJOIN district AS d ON d.district_id = a.district_id\nWHERE t.k_symbol = 'DUCHOD'\n  AND t.type = 'PRIJEM'\n  AND t.date BETWEEN '1996-01-01' AND '1996-12-31'\nGROUP BY d.A2\nORDER BY total_old_age_pension_payments DESC\nLIMIT 3",
+    "expected_result": [
+      {
+        "district_name": "Hl.m. Praha",
+        "total_old_age_pension_payments": 3368162
+      },
+      {
+        "district_name": "Karvina",
+        "total_old_age_pension_payments": 1444371
+      },
+      {
+        "district_name": "Olomouc",
+        "total_old_age_pension_payments": 864984
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_188",
+    "question": "In which single calendar year were the most accounts opened in the north Moravia region, and how many accounts were opened that year? Return the year and the count.",
+    "tier": 3,
+    "gold_sql": "SELECT strftime('%Y', a.date) AS year, COUNT(*) AS accounts_opened\nFROM account a\nJOIN district d ON a.district_id = d.district_id\nWHERE d.A3 = 'north Moravia'\nGROUP BY strftime('%Y', a.date)\nORDER BY accounts_opened DESC, year ASC\nLIMIT 1",
+    "expected_result": [
+      {
+        "year": "1996",
+        "accounts_opened": 240
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_189",
+    "question": "For each of the eight regions, count how many women own at least one account that has a running loan where the client is currently in debt, based on where the woman lives. Return a list of all eight regions with their counts, ordered from most to fewest.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A3 AS region, COUNT(DISTINCT q.client_id) AS women_count\nFROM district d\nLEFT JOIN (\n  SELECT DISTINCT c.client_id, c.district_id\n  FROM client c\n  JOIN disp p ON p.client_id = c.client_id AND p.type = 'OWNER'\n  JOIN loan l ON l.account_id = p.account_id AND l.status = 'D'\n  WHERE c.gender = 'F'\n) q ON q.district_id = d.district_id\nGROUP BY d.A3\nORDER BY women_count DESC, d.A3 ASC",
+    "expected_result": [
+      {
+        "region": "north Moravia",
+        "women_count": 6
+      },
+      {
+        "region": "south Moravia",
+        "women_count": 6
+      },
+      {
+        "region": "central Bohemia",
+        "women_count": 5
+      },
+      {
+        "region": "east Bohemia",
+        "women_count": 2
+      },
+      {
+        "region": "south Bohemia",
+        "women_count": 2
+      },
+      {
+        "region": "west Bohemia",
+        "women_count": 2
+      },
+      {
+        "region": "Prague",
+        "women_count": 1
+      },
+      {
+        "region": "north Bohemia",
+        "women_count": 0
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_190",
+    "question": "Which five districts are home to the most men who hold a gold credit card? Use the district where each man lives. Return the five district names, ordered from most cardholders to fewest.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A2 AS district_name\nFROM district AS d\nJOIN client AS cl ON cl.district_id = d.district_id\nJOIN disp AS di ON di.client_id = cl.client_id\nJOIN card AS ca ON ca.disp_id = di.disp_id\nWHERE cl.gender = 'M'\n  AND ca.type = 'gold'\nGROUP BY d.district_id, d.A2\nORDER BY COUNT(DISTINCT cl.client_id) DESC, d.A2 ASC\nLIMIT 5",
+    "expected_result": [
+      {
+        "district_name": "Hl.m. Praha"
+      },
+      {
+        "district_name": "Karvina"
+      },
+      {
+        "district_name": "Domazlice"
+      },
+      {
+        "district_name": "Most"
+      },
+      {
+        "district_name": "Ostrava - mesto"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_191",
+    "question": "Looking at accounts opened during 1996, what was the average age of the account owner on the day the account was opened, calculated separately for female owners and male owners? Return two averages in years, labeled by gender.",
+    "tier": 3,
+    "gold_sql": "SELECT c.gender AS gender, AVG((julianday(a.date) - julianday(c.birth_date)) / 365.25) AS avg_age_years FROM account AS a JOIN disp AS d ON d.account_id = a.account_id AND d.type = 'OWNER' JOIN client AS c ON c.client_id = d.client_id WHERE a.date >= '1996-01-01' AND a.date < '1997-01-01' GROUP BY c.gender ORDER BY c.gender",
+    "expected_result": [
+      {
+        "gender": "F",
+        "avg_age_years": 41.250364550784155
+      },
+      {
+        "gender": "M",
+        "avg_age_years": 43.15026142813701
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/3"
+  },
+  {
+    "id": "g_192",
+    "question": "Among account owners who live in the Prague region, what percentage of women hold at least one credit card, and what is the same percentage for men? Return both percentages labeled by gender.",
+    "tier": 3,
+    "gold_sql": "SELECT c.gender,\n       ROUND(100.0 * COUNT(DISTINCT CASE WHEN ca.card_id IS NOT NULL THEN c.client_id END) / COUNT(DISTINCT c.client_id), 2) AS pct_with_card\nFROM client c\nJOIN district d\n  ON d.district_id = c.district_id\n AND d.A3 = 'Prague'\nJOIN disp p\n  ON p.client_id = c.client_id\n AND p.type = 'OWNER'\nLEFT JOIN card ca\n  ON ca.disp_id = p.disp_id\nGROUP BY c.gender",
+    "expected_result": [
+      {
+        "gender": "F",
+        "pct_with_card": 23.22
+      },
+      {
+        "gender": "M",
+        "pct_with_card": 24.29
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/3"
+  },
+  {
+    "id": "g_193",
+    "question": "What is the total approved amount of loans that finished but were not paid back, grouped by the region where the account owner lives? Return the top three regions with their totals, ordered from highest total to lowest.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A3 AS region, SUM(l.amount) AS total_approved_amount\nFROM loan AS l\nJOIN disp AS dp ON dp.account_id = l.account_id AND dp.type = 'OWNER'\nJOIN client AS c ON c.client_id = dp.client_id\nJOIN district AS d ON d.district_id = c.district_id\nWHERE l.status = 'B'\nGROUP BY d.A3\nORDER BY total_approved_amount DESC\nLIMIT 3",
+    "expected_result": [
+      {
+        "region": "north Moravia",
+        "total_approved_amount": 1252668
+      },
+      {
+        "region": "south Moravia",
+        "total_approved_amount": 801468
+      },
+      {
+        "region": "Prague",
+        "total_approved_amount": 626856
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_194",
+    "question": "For loans that are still running and OK so far, what is the average monthly payment when the account owner was born on or after January 1, 1970? Calculate it separately for female owners and male owners and return two averages labeled by gender.",
+    "tier": 3,
+    "gold_sql": "SELECT c.gender, AVG(l.payments) AS avg_monthly_payment\nFROM loan AS l\nJOIN disp AS d ON d.account_id = l.account_id AND d.type = 'OWNER'\nJOIN client AS c ON c.client_id = d.client_id\nWHERE l.status = 'C'\n  AND c.birth_date >= '1970-01-01'\nGROUP BY c.gender\nORDER BY c.gender",
+    "expected_result": [
+      {
+        "gender": "F",
+        "avg_monthly_payment": 3926.5576923076924
+      },
+      {
+        "gender": "M",
+        "avg_monthly_payment": 4230.777777777777
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_195",
+    "question": "How many women who live in the south Bohemia region became owners of an account with weekly statements that was opened between January 1, 1995 and December 31, 1996? Return a single count.",
+    "tier": 3,
+    "gold_sql": "SELECT COUNT(DISTINCT c.client_id) AS count\nFROM client AS c\nJOIN district AS d ON d.district_id = c.district_id\nJOIN disp AS dp ON dp.client_id = c.client_id AND dp.type = 'OWNER'\nJOIN account AS a ON a.account_id = dp.account_id\nWHERE c.gender = 'F'\n  AND d.A3 = 'south Bohemia'\n  AND a.frequency = 'POPLATEK TYDNE'\n  AND a.date BETWEEN '1995-01-01' AND '1996-12-31'",
+    "expected_result": [
+      {
+        "count": 4
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_196",
+    "question": "Considering only standing orders for insurance payments, which three districts have the highest total debited amount, based on where the owner of the account sending the order lives? Return three district names with their totals, ordered from highest to lowest.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A2 AS district_name, SUM(o.amount) AS total_debited_amount FROM \"order\" AS o JOIN disp AS p ON o.account_id = p.account_id AND p.type = 'OWNER' JOIN client AS c ON p.client_id = c.client_id JOIN district AS d ON c.district_id = d.district_id WHERE o.k_symbol = 'POJISTNE' GROUP BY d.district_id, d.A2 ORDER BY total_debited_amount DESC LIMIT 3",
+    "expected_result": [
+      {
+        "district_name": "Hl.m. Praha",
+        "total_debited_amount": 129510.0
+      },
+      {
+        "district_name": "Nymburk",
+        "total_debited_amount": 26456.0
+      },
+      {
+        "district_name": "Karvina",
+        "total_debited_amount": 25380.0
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_197",
+    "question": "For clients born before January 1, 1940, what is the average amount of a single old-age pension credit arriving in an account they own? Calculate it separately for women and men and return two averages labeled by gender.",
+    "tier": 3,
+    "gold_sql": "SELECT c.gender AS gender, AVG(t.amount) AS avg_old_age_pension_credit\nFROM client AS c\nJOIN disp AS d ON d.client_id = c.client_id AND d.type = 'OWNER'\nJOIN trans AS t ON t.account_id = d.account_id\nWHERE c.birth_date < '1940-01-01'\n  AND t.type = 'PRIJEM'\n  AND t.k_symbol = 'DUCHOD'\nGROUP BY c.gender",
+    "expected_result": [
+      {
+        "gender": "F",
+        "avg_old_age_pension_credit": 5521.3240048089765
+      },
+      {
+        "gender": "M",
+        "avg_old_age_pension_credit": 5519.123714694781
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_198",
+    "question": "Rank regions by how many junior credit cards are held by clients born on or after January 1, 1970, based on where each client lives. Return the top three regions with their counts, ordered from most to fewest.",
+    "tier": 3,
+    "gold_sql": "SELECT d.A3 AS region, COUNT(DISTINCT ca.card_id) AS junior_card_count\nFROM card AS ca\nJOIN disp AS di ON ca.disp_id = di.disp_id\nJOIN client AS cl ON di.client_id = cl.client_id\nJOIN district AS d ON cl.district_id = d.district_id\nWHERE ca.type = 'junior'\n  AND cl.birth_date >= '1970-01-01'\nGROUP BY d.A3\nORDER BY junior_card_count DESC, d.A3 ASC\nLIMIT 3",
+    "expected_result": [
+      {
+        "region": "central Bohemia",
+        "junior_card_count": 23
+      },
+      {
+        "region": "Prague",
+        "junior_card_count": 22
+      },
+      {
+        "region": "south Moravia",
+        "junior_card_count": 20
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_199",
+    "question": "Which group holds more credit cards in total: clients living in the north Moravia region or clients living in the south Moravia region? Return both totals and state which region is larger.",
+    "tier": 3,
+    "gold_sql": "WITH region_totals AS (\n  SELECT d.A3 AS region, COUNT(DISTINCT c.card_id) AS total_cards\n  FROM card c\n  JOIN disp di ON c.disp_id = di.disp_id\n  JOIN client cl ON di.client_id = cl.client_id\n  JOIN district d ON cl.district_id = d.district_id\n  WHERE d.A3 IN ('north Moravia', 'south Moravia')\n  GROUP BY d.A3\n), pivot AS (\n  SELECT\n    COALESCE(MAX(CASE WHEN region = 'north Moravia' THEN total_cards END), 0) AS north_total,\n    COALESCE(MAX(CASE WHEN region = 'south Moravia' THEN total_cards END), 0) AS south_total\n  FROM region_totals\n)\nSELECT\n  north_total AS north_moravia_total,\n  south_total AS south_moravia_total,\n  CASE\n    WHEN north_total > south_total THEN 'north Moravia'\n    WHEN south_total > north_total THEN 'south Moravia'\n    ELSE 'tie'\n  END AS larger_region\nFROM pivot",
+    "expected_result": [
+      {
+        "north_moravia_total": 130,
+        "south_moravia_total": 130,
+        "larger_region": "tie"
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  },
+  {
+    "id": "g_200",
+    "question": "What is the largest single approved loan amount among accounts owned by women who live in the west Bohemia region? Return one amount.",
+    "tier": 3,
+    "gold_sql": "SELECT MAX(l.amount) AS amount\nFROM loan AS l\nJOIN account AS a ON a.account_id = l.account_id\nJOIN disp AS d ON d.account_id = a.account_id AND d.type = 'OWNER'\nJOIN client AS c ON c.client_id = d.client_id AND c.gender = 'F'\nJOIN district AS di ON di.district_id = c.district_id AND di.A3 = 'west Bohemia'",
+    "expected_result": [
+      {
+        "amount": 417060
+      }
+    ],
+    "gold_answer": "",
+    "source": "synthetic:kimi-k3:agreement 2/2"
+  }
+]

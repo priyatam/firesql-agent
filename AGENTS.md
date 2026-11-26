@@ -5,21 +5,23 @@ How to work in this repo. Keep it simple.
 ## Style
 
 1. Write pure functions. Pass data in, return data out.
-2. Use frozen dataclasses (or frozen Pydantic models) for data. Don't mutate; return a new value with `dataclasses.replace`.
-3. Keep I/O at the edges. Only `fireworks.py` touches the network, only `agent.py` and `context.py` touch SQLite, and only `cli.py` touches the terminal.
+2. Use frozen Pydantic models for all data, including JSON and API payloads; no bare dicts in the core. Don't mutate; return a new value with `model_copy(update=...)`.
+3. Keep I/O at the edges. Only `fireworks.py` and the Strands model in `harness.py` touch the network, only `chat.py`, `context.py` and the harness tools touch SQLite (read-only), and only `cli.py` touches the terminal.
 4. Prefer the standard library. Add a dependency only when it removes real code.
-5. Small modules, short functions, plain names. No classes for behavior, no frameworks, no inheritance.
+5. Small modules, short functions, plain names. The only classes are frozen Pydantic models and exception types: no classes with behavior or mutable state, no inheritance. Share results by returning them (e.g. return `Usage` with the result), never through shared mutable objects. The only framework is Strands, and only for agent mode (`src/harness.py`).
 6. Put constants at the top of the module. Pass settings through `Config`, not globals or env lookups deep in the code.
 7. Fail loudly at the edges with a clear message. Don't swallow errors in the core.
 
 ## Architecture
 
-Follow the architecture principles for the current version in `docs/solution.md`.
+Follow the agent-mode design decisions in `docs/solution.md`.
 
 ## Workflow
 
-1. Run from the project root: `uv run cli` and `uv run python -m src.eval`.
+1. Run `uv run cli --chat` or `uv run cli --agent` and `uv run python -m src.eval --set dev|golden`. Each version is a mode.
 2. Before claiming a change helps, run the eval and compare accuracy, P50/P95 latency and cost with the previous version.
-3. After a change, update the matching docs: results in `docs/reports.md` under the version heading, reasoning in `docs/design-considerations.md`, and design in `docs/solution.md`.
-4. Lint with `uvx ruff check src`.
-5. Never commit, branch or push unless asked. Never commit `.env` or `data/financial.sqlite`.
+3. After a change, update the matching docs: results in `docs/reports.md` under the version heading, reasoning in `docs/tradeoffs.md`, and design in `docs/solution.md`.
+4. Run `uv run pytest` before calling work done. Tests never reach the model; inject it.
+5. Lint with `uvx ruff check src`.
+6. Never modify or add files in `data/`; it is the given dataset. Generated sets go in `eval/`.
+7. Never commit, branch or push unless asked. Never commit `.env` or `data/financial.sqlite`.

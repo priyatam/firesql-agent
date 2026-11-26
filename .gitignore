@@ -25,6 +25,7 @@ env/
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+.cache/
 .coverage
 htmlcov/
 .ipynb_checkpoints/
@@ -40,3 +41,6 @@ htmlcov/
 
 # Large data created by setup.sh (re-download with ./setup.sh)
 data/financial.sqlite
+
+# Local validation sandbox
+.validation-sandbox/

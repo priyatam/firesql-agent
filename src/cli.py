@@ -1,14 +1,15 @@
-"""Interactive text-to-SQL CLI. Run with: uv run cli (or python -m src.cli)"""
+"""Interactive text-to-SQL CLI. Run with: uv run cli [--mode chat|agent] [--model ID]"""
 
 from __future__ import annotations
 
+import argparse
 import os
 import sys
 
 from dotenv import find_dotenv, load_dotenv
 
-from src.agent import DEFAULT_MODEL, Config, Turn, answer, connect_readonly
-from src.context import build_briefing
+from src.chat import DEFAULT_MODEL, MODES, Config, Turn, connect_readonly, make_session
+from src.context import cache_path, load_tables
 from src.fireworks import FireworksError
 
 MAX_SHOWN_ROWS = 20
@@ -23,15 +24,18 @@ Commands: :reset (forget the conversation), :help, exit / quit"""
 
 def main() -> None:
     load_dotenv(find_dotenv(usecwd=True))
+    args = parse_args()
     api_key = os.environ.get("FIREWORKS_API_KEY")
     if not api_key:
         sys.exit("FIREWORKS_API_KEY is not set. Add it to .env or export it.")
 
-    cfg = Config(model=os.environ.get("FIREWORKS_MODEL", DEFAULT_MODEL))
+    cfg = Config(model=args.model, mode=args.mode)
     conn = connect_readonly()
-    print("Reading the database schema...")
-    briefing = build_briefing(conn)
-    print(f"Ready. Model: {short_model(cfg.model)}\n{HELP}")
+    if not cache_path().exists():
+        print("First run: reading the database schema (a few seconds; cached after this)...")
+    tables = load_tables(conn)
+    ask = make_session(cfg, conn, tables, api_key)
+    print(f"Ready. Mode: {cfg.mode} · model: {short_model(cfg.model)}\n{HELP}")
 
     history: tuple[Turn, ...] = ()
     while True:
@@ -48,12 +52,12 @@ def main() -> None:
             print(HELP)
             continue
         if question == ":reset":
-            history = ()
+            history, ask = (), make_session(cfg, conn, tables, api_key)
             print("Conversation cleared.")
             continue
 
         try:
-            turn = answer(question, history=history, conn=conn, briefing=briefing, cfg=cfg, api_key=api_key)
+            turn = ask(question, history)
         except FireworksError as exc:
             print(f"Error talking to Fireworks: {exc}")
             continue
@@ -68,6 +72,22 @@ def main() -> None:
     conn.close()
 
 
+def parse_args(argv: list[str] | None = None) -> argparse.Namespace:
+    parser = argparse.ArgumentParser(prog="cli", description="Ask questions about the bank database in plain English.", allow_abbrev=False)
+    mode = parser.add_mutually_exclusive_group()
+    mode.add_argument("--chat", dest="mode", action="store_const", const="chat",
+                      help="chat mode (v0.1): one model call per question, with the full schema briefing")
+    mode.add_argument("--agent", dest="mode", action="store_const", const="agent",
+                      help="agent mode (v0.2): a Strands agent that tests its SQL before answering")
+    parser.set_defaults(mode=os.environ.get("FIREWORKS_MODE", "chat"))
+    parser.add_argument("--model", default=os.environ.get("FIREWORKS_MODEL", DEFAULT_MODEL),
+                        help="Fireworks model id. Default: $FIREWORKS_MODEL or %(default)s.")
+    args = parser.parse_args(argv)
+    if args.mode not in MODES:
+        parser.error(f"FIREWORKS_MODE must be one of {', '.join(MODES)}, not {args.mode!r}")
+    return args
+
+
 def render_turn(turn: Turn, model: str) -> str:
     sql = "\n".join("  " + line for line in turn.sql.splitlines()) or "  (none)"
     body = f"Error: {turn.error}" if turn.error else format_table(turn.columns, turn.rows, turn.truncated)
@@ -77,7 +97,10 @@ def render_turn(turn: Turn, model: str) -> str:
 def format_stats(turn: Turn, model: str) -> str:
     u = turn.usage
     cached = f", {u.cached_tokens:,} cached" if u.cached_tokens else ""
-    attempts = "1 attempt" if turn.attempts == 1 else f"{turn.attempts} attempts"
+    if turn.tool_calls:  # agent mode: attempts counts model calls
+        attempts = f"{turn.attempts} model calls, {turn.tool_calls} tool call{'s' if turn.tool_calls != 1 else ''}"
+    else:
+        attempts = "1 attempt" if turn.attempts == 1 else f"{turn.attempts} attempts"
     return (
         f"[{turn.total_s:.2f}s total: model {turn.llm_s:.2f}s, sql {turn.sql_s:.2f}s | "
         f"{u.prompt_tokens:,} in{cached} / {u.completion_tokens:,} out tokens | {attempts} | {short_model(model)}]"
@@ -91,7 +114,7 @@ def format_table(columns: tuple[str, ...], rows: tuple[tuple, ...], truncated: b
         return "(no rows)"
     shown = [[format_cell(v) for v in row] for row in rows[:MAX_SHOWN_ROWS]]
     widths = [max(len(str(c)), *(len(r[i]) for r in shown)) for i, c in enumerate(columns)]
-    line = lambda cells: " | ".join(cell.ljust(w) for cell, w in zip(cells, widths))  # noqa: E731
+    line = lambda cells: " | ".join(cell.ljust(w) for cell, w in zip(cells, widths))
     out = [line(list(columns)), "-+-".join("-" * w for w in widths), *(line(r) for r in shown)]
     hidden = len(rows) - len(shown)
     if hidden > 0 or truncated:

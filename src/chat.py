@@ -1,4 +1,4 @@
-"""Text-to-SQL agent: question (+ conversation) -> SQL -> rows, with one repair attempt.
+"""Chat mode (v0.1): question (+ conversation) -> one LLM call -> SQL -> rows, with one repair attempt.
 
 Pipeline: build messages -> ask the model for {reasoning, sql} -> check it is read-only
 -> run it -> on any failure, send the error back once and retry.
@@ -6,18 +6,20 @@ Pipeline: build messages -> ask the model for {reasoning, sql} -> check it is re
 
 from __future__ import annotations
 
-import json
+import hashlib
 import re
 import sqlite3
 import time
-from dataclasses import dataclass
+from collections.abc import Callable
 from pathlib import Path
+from typing import Any, Literal
 
 from pydantic import BaseModel, ConfigDict, ValidationError
 
 from src import fireworks
-from src.fireworks import Usage
-from src.utils import DEFAULT_DB_PATH
+from src.context import Table, render_briefing
+from src.fireworks import Message, Usage
+from src.utils import DB_PATH
 
 DEFAULT_MODEL = "accounts/fireworks/models/glm-5p3-flash"
 
@@ -43,7 +45,8 @@ Reply as JSON: {"reasoning": "<one or two short sentences>", "sql": "<the query>
 """
 
 READ_ONLY_START = re.compile(r"^\s*(select|with)\b", re.IGNORECASE)
-WRITE_KEYWORDS = re.compile(r"\b(insert|update|delete|drop|alter|create|attach|detach|pragma|vacuum)\b", re.I)
+WRITE_KEYWORDS = re.compile(r"\b(insert|update|delete|drop|alter|create|attach|detach|pragma|vacuum)\b", re.IGNORECASE)
+STRING_LITERAL = re.compile(r"'(?:[^']|'')*'")
 
 
 class SQLReply(BaseModel):
@@ -61,26 +64,31 @@ class ReplyError(ValueError):
     """The model's reply could not be used (bad JSON, cut off, or not a safe query)."""
 
 
-@dataclass(frozen=True)
-class Config:
+class Config(BaseModel):
+    model_config = ConfigDict(frozen=True)
     model: str = DEFAULT_MODEL
+    mode: Literal["chat", "agent"] = "chat"  # v0.1 or v0.2, see make_session below
     reasoning_effort: str | None = "low"
     max_repairs: int = 1
     history_turns: int = 3
+    history_rows: int = 10  # agent mode: rows of the previous result shown with a follow-up (0 = none)
     max_rows: int = 1000
     sql_timeout_s: float = 15.0
+    max_turns: int = 8  # agent mode: model calls per question
+    cache_key: str | None = None  # session affinity for the prompt cache; set per database by make_session
 
 
-@dataclass(frozen=True)
-class Turn:
+class Turn(BaseModel):
+    model_config = ConfigDict(frozen=True)
     question: str
     sql: str
     columns: tuple[str, ...] = ()
-    rows: tuple[tuple, ...] = ()
+    rows: tuple[tuple[Any, ...], ...] = ()
     truncated: bool = False
     error: str | None = None
     attempts: int = 1
     usage: Usage = Usage()
+    tool_calls: int = 0  # agent mode only
     llm_s: float = 0.0
     sql_s: float = 0.0
     total_s: float = 0.0
@@ -90,7 +98,7 @@ class Turn:
         return self.error is None
 
 
-def connect_readonly(db_path: str = DEFAULT_DB_PATH) -> sqlite3.Connection:
+def connect_readonly(db_path: Path | str = DB_PATH) -> sqlite3.Connection:
     """Open the database read-only, so no generated query can modify it."""
     path = Path(db_path).resolve()
     if not path.exists():
@@ -107,7 +115,10 @@ def answer(
     cfg: Config,
     api_key: str,
 ) -> Turn:
-    """Answer one question. Raises fireworks.FireworksError only if the API is unreachable."""
+    """Answer one question in chat mode (v0.1): one model call, plus one repair on error.
+
+    Raises fireworks.FireworksError only if the API is unreachable.
+    """
     start = time.perf_counter()
     messages = build_messages(briefing, history[-cfg.history_turns :], question)
     usage, llm_s, sql_s, sql, error = Usage(), 0.0, 0.0, "", ""
@@ -119,6 +130,7 @@ def answer(
             api_key=api_key,
             response_format=REPLY_FORMAT,
             reasoning_effort=cfg.reasoning_effort,
+            session_id=cfg.cache_key,
         )
         usage, llm_s = usage + completion.usage, llm_s + completion.latency_s
         sql_start = time.perf_counter()
@@ -126,7 +138,7 @@ def answer(
             sql = guard_sql(parse_reply(completion).sql)
             columns, rows, truncated = run_sql(conn, sql, timeout_s=cfg.sql_timeout_s, max_rows=cfg.max_rows)
             return Turn(
-                question, sql, columns, rows, truncated,
+                question=question, sql=sql, columns=columns, rows=rows, truncated=truncated,
                 attempts=attempt, usage=usage, llm_s=llm_s,
                 sql_s=sql_s + time.perf_counter() - sql_start,
                 total_s=time.perf_counter() - start,
@@ -137,26 +149,25 @@ def answer(
             messages = [*messages, *repair_messages(completion.content, error)]
 
     return Turn(
-        question, sql, error=error, attempts=cfg.max_repairs + 1,
+        question=question, sql=sql, error=error, attempts=cfg.max_repairs + 1,
         usage=usage, llm_s=llm_s, sql_s=sql_s, total_s=time.perf_counter() - start,
     )  # fmt: skip
 
 
-def build_messages(briefing: str, history: tuple[Turn, ...], question: str) -> list[dict[str, str]]:
+def build_messages(briefing: str, history: tuple[Turn, ...], question: str) -> list[Message]:
     """System briefing first (stable, cacheable prefix), then prior turns, then the question."""
-    messages = [{"role": "system", "content": SYSTEM_PROMPT + briefing}]
+    messages = [Message(role="system", content=SYSTEM_PROMPT + briefing)]
     for turn in history:
         if turn.ok:
-            messages.append({"role": "user", "content": turn.question})
-            messages.append({"role": "assistant", "content": json.dumps({"reasoning": "", "sql": turn.sql})})
-    messages.append({"role": "user", "content": question})
-    return messages
+            reply = SQLReply(reasoning="", sql=turn.sql).model_dump_json()
+            messages += [Message(role="user", content=turn.question), Message(role="assistant", content=reply)]
+    return [*messages, Message(role="user", content=question)]
 
 
-def repair_messages(bad_reply: str, error: str) -> list[dict[str, str]]:
+def repair_messages(bad_reply: str, error: str) -> list[Message]:
     return [
-        {"role": "assistant", "content": bad_reply},
-        {"role": "user", "content": f"That failed: {error}\nFix it and reply with the corrected query in the same JSON format."},
+        Message(role="assistant", content=bad_reply),
+        Message(role="user", content=f"That failed: {error}\nFix it and reply with the corrected query in the same JSON format."),
     ]
 
 
@@ -175,9 +186,10 @@ def guard_sql(sql: str) -> str:
     cleaned = _strip_code_fences(sql).strip().rstrip(";").strip()
     if not cleaned:
         raise ReplyError("the query was empty")
-    if ";" in cleaned:
+    code = STRING_LITERAL.sub("''", cleaned)  # words and semicolons inside quoted values don't count
+    if ";" in code:
         raise ReplyError("only a single SQL statement is allowed")
-    if not READ_ONLY_START.match(cleaned) or WRITE_KEYWORDS.search(cleaned):
+    if not READ_ONLY_START.match(code) or WRITE_KEYWORDS.search(code):
         raise ReplyError("only read-only SELECT queries are allowed")
     return cleaned
 
@@ -204,3 +216,41 @@ def run_sql(
 def _strip_code_fences(text: str) -> str:
     match = re.search(r"```(?:json|sql)?\s*(.*?)```", text, re.DOTALL)
     return (match.group(1) if match else text).strip()
+
+# --- sessions: one interface over every version ------------------------------------------------
+#
+#   chat  v0.1: one model call with the full briefing, plus one repair on error
+#   agent        v0.2: a Strands agent that explores the schema with tools, then answers
+#
+# harness.py imports this module, so it is imported inside the functions (and Strands loads only in agent mode).
+
+MODES = ("chat", "agent")
+
+Ask = Callable[[str, tuple[Turn, ...]], Turn]
+
+
+def make_session(cfg: Config, conn: sqlite3.Connection, tables: tuple[Table, ...], api_key: str) -> Ask:
+    """A fresh conversation in the configured mode: ask(question, history) -> Turn. Call again to reset."""
+    briefing = render_briefing(tables)
+    cfg = cfg.model_copy(update={"cache_key": cfg.cache_key or cache_key(cfg.mode, briefing)})
+    if cfg.mode == "agent":
+        from src.harness import (  # Strands loads only in agent mode
+            answer_with_agent,
+            build_agent,
+        )
+
+        agent = build_agent(tables, cfg, api_key)
+        return lambda question, history: answer_with_agent(agent, question, history=history, conn=conn, cfg=cfg)
+    return lambda question, history: answer(
+        question, history=history, conn=conn, briefing=briefing, cfg=cfg, api_key=api_key
+    )
+
+
+def cache_key(mode: str, briefing: str) -> str:
+    """Same database and mode, same key: every session shares the cached prompt prefix on one replica."""
+    prefix = ""
+    if mode == "agent":
+        from src.harness import SYSTEM_PROMPT
+
+        prefix = SYSTEM_PROMPT
+    return hashlib.sha256(f"{mode}\n{prefix}\n{briefing}".encode()).hexdigest()[:16]

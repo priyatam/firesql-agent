@@ -1,0 +1,276 @@
+[
+  {
+    "id": "f01",
+    "tier": 2,
+    "turns": [
+      {
+        "question": "How many accounts have weekly statements?",
+        "gold_sql": "SELECT COUNT(*) FROM account WHERE frequency = 'POPLATEK TYDNE'"
+      },
+      {
+        "question": "How many of those were opened in 1996?",
+        "gold_sql": "SELECT COUNT(*) FROM account WHERE frequency = 'POPLATEK TYDNE' AND strftime('%Y', date) = '1996'"
+      },
+      {
+        "question": "Break that down by region: region name and number of accounts.",
+        "gold_sql": "SELECT d.A3, COUNT(*) FROM account a JOIN district d ON d.district_id = a.district_id WHERE a.frequency = 'POPLATEK TYDNE' AND strftime('%Y', a.date) = '1996' GROUP BY d.A3"
+      }
+    ]
+  },
+  {
+    "id": "f02",
+    "tier": 2,
+    "turns": [
+      {
+        "question": "What is the average loan amount?",
+        "gold_sql": "SELECT AVG(amount) FROM loan"
+      },
+      {
+        "question": "Only for loans with a duration of 60 months.",
+        "gold_sql": "SELECT AVG(amount) FROM loan WHERE duration = 60"
+      },
+      {
+        "question": "Now split that by loan status: status and average amount.",
+        "gold_sql": "SELECT status, AVG(amount) FROM loan WHERE duration = 60 GROUP BY status"
+      }
+    ]
+  },
+  {
+    "id": "f03",
+    "tier": 3,
+    "turns": [
+      {
+        "question": "Which five districts have the most clients living in them? Show the district name and the number of clients.",
+        "gold_sql": "SELECT d.A2, COUNT(*) AS n FROM client c JOIN district d ON d.district_id = c.district_id GROUP BY d.district_id ORDER BY n DESC LIMIT 5"
+      },
+      {
+        "question": "What is the average salary in each of those five districts? Show the district name and average salary.",
+        "gold_sql": "SELECT d.A2, d.A11 FROM district d WHERE d.district_id IN (SELECT district_id FROM client GROUP BY district_id ORDER BY COUNT(*) DESC LIMIT 5)"
+      },
+      {
+        "question": "Which of them had the highest unemployment rate in 1996? Give its name and the rate.",
+        "gold_sql": "SELECT d.A2, d.A13 FROM district d WHERE d.district_id IN (SELECT district_id FROM client GROUP BY district_id ORDER BY COUNT(*) DESC LIMIT 5) ORDER BY d.A13 DESC LIMIT 1"
+      }
+    ]
+  },
+  {
+    "id": "f04",
+    "tier": 3,
+    "turns": [
+      {
+        "question": "List the three largest loans: account id and loan amount, largest first.",
+        "gold_sql": "SELECT account_id, amount FROM loan ORDER BY amount DESC LIMIT 3"
+      },
+      {
+        "question": "Who owns each of those accounts? Show the account id, the owner's client id and gender.",
+        "gold_sql": "SELECT d.account_id, c.client_id, c.gender FROM disp d JOIN client c ON c.client_id = d.client_id WHERE d.type = 'OWNER' AND d.account_id IN (SELECT account_id FROM loan ORDER BY amount DESC LIMIT 3)"
+      },
+      {
+        "question": "Which district does each of those owners live in? Show the client id and district name.",
+        "gold_sql": "SELECT c.client_id, di.A2 FROM disp d JOIN client c ON c.client_id = d.client_id JOIN district di ON di.district_id = c.district_id WHERE d.type = 'OWNER' AND d.account_id IN (SELECT account_id FROM loan ORDER BY amount DESC LIMIT 3)"
+      }
+    ]
+  },
+  {
+    "id": "f05",
+    "tier": 2,
+    "turns": [
+      {
+        "question": "How many credit cards of each type are there?",
+        "gold_sql": "SELECT type, COUNT(*) FROM card GROUP BY type"
+      },
+      {
+        "question": "Only cards issued in 1998.",
+        "gold_sql": "SELECT type, COUNT(*) FROM card WHERE strftime('%Y', issued) = '1998' GROUP BY type"
+      },
+      {
+        "question": "What percentage of the cards issued in 1998 are gold? Give a number from 0 to 100, rounded to 2 decimals.",
+        "gold_sql": "SELECT ROUND(100.0 * SUM(type = 'gold') / COUNT(*), 2) FROM card WHERE strftime('%Y', issued) = '1998'"
+      }
+    ]
+  },
+  {
+    "id": "f06",
+    "tier": 3,
+    "turns": [
+      {
+        "question": "Which region has the most accounts? Give the region and the number of accounts.",
+        "gold_sql": "SELECT d.A3, COUNT(*) AS n FROM account a JOIN district d ON d.district_id = a.district_id GROUP BY d.A3 ORDER BY n DESC LIMIT 1"
+      },
+      {
+        "question": "Within that region, which district has the most accounts? Give the district name and count.",
+        "gold_sql": "SELECT d.A2, COUNT(*) AS n FROM account a JOIN district d ON d.district_id = a.district_id WHERE d.A3 = 'north Moravia' GROUP BY d.district_id ORDER BY n DESC LIMIT 1"
+      },
+      {
+        "question": "How many loans were granted on accounts in that district, and what is their total amount?",
+        "gold_sql": "SELECT COUNT(*), SUM(l.amount) FROM loan l JOIN account a ON a.account_id = l.account_id JOIN district d ON d.district_id = a.district_id WHERE d.A2 = 'Karvina'"
+      }
+    ]
+  },
+  {
+    "id": "f07",
+    "tier": 2,
+    "turns": [
+      {
+        "question": "How many female clients were born before 1950?",
+        "gold_sql": "SELECT COUNT(*) FROM client WHERE gender = 'F' AND birth_date < '1950-01-01'"
+      },
+      {
+        "question": "How many of them are owners of an account?",
+        "gold_sql": "SELECT COUNT(DISTINCT c.client_id) FROM client c JOIN disp d ON d.client_id = c.client_id WHERE c.gender = 'F' AND c.birth_date < '1950-01-01' AND d.type = 'OWNER'"
+      },
+      {
+        "question": "How many of the accounts they own have a loan?",
+        "gold_sql": "SELECT COUNT(DISTINCT d.account_id) FROM client c JOIN disp d ON d.client_id = c.client_id JOIN loan l ON l.account_id = d.account_id WHERE c.gender = 'F' AND c.birth_date < '1950-01-01' AND d.type = 'OWNER'"
+      }
+    ]
+  },
+  {
+    "id": "f08",
+    "tier": 3,
+    "turns": [
+      {
+        "question": "What is the total amount of credit transactions (money coming into accounts) per year? Show year and total.",
+        "gold_sql": "SELECT strftime('%Y', date) AS y, SUM(amount) FROM trans WHERE type = 'PRIJEM' GROUP BY y"
+      },
+      {
+        "question": "Which year had the highest total? Give the year and the total.",
+        "gold_sql": "SELECT strftime('%Y', date) AS y, SUM(amount) AS s FROM trans WHERE type = 'PRIJEM' GROUP BY y ORDER BY s DESC LIMIT 1"
+      },
+      {
+        "question": "In that year, which month had the highest total of credit transactions? Give the month number (1-12) and the total.",
+        "gold_sql": "SELECT CAST(strftime('%m', date) AS INTEGER) AS m, SUM(amount) AS s FROM trans WHERE type = 'PRIJEM' AND strftime('%Y', date) = '1998' GROUP BY m ORDER BY s DESC LIMIT 1"
+      }
+    ]
+  },
+  {
+    "id": "f09",
+    "tier": 2,
+    "turns": [
+      {
+        "question": "How many loans are there in each status?",
+        "gold_sql": "SELECT status, COUNT(*) FROM loan GROUP BY status"
+      },
+      {
+        "question": "What is the average amount of the loans that are still running with the client in debt?",
+        "gold_sql": "SELECT AVG(amount) FROM loan WHERE status = 'D'"
+      },
+      {
+        "question": "And their average duration in months?",
+        "gold_sql": "SELECT AVG(duration) FROM loan WHERE status = 'D'"
+      }
+    ]
+  },
+  {
+    "id": "f10",
+    "tier": 3,
+    "turns": [
+      {
+        "question": "List the five districts with the highest average salary, with district name and average salary, highest first.",
+        "gold_sql": "SELECT A2, A11 FROM district ORDER BY A11 DESC LIMIT 5"
+      },
+      {
+        "question": "How many accounts are in the third one?",
+        "gold_sql": "SELECT COUNT(*) FROM account WHERE district_id = (SELECT district_id FROM district ORDER BY A11 DESC LIMIT 1 OFFSET 2)"
+      },
+      {
+        "question": "How many of those accounts have weekly statements?",
+        "gold_sql": "SELECT COUNT(*) FROM account WHERE district_id = (SELECT district_id FROM district ORDER BY A11 DESC LIMIT 1 OFFSET 2) AND frequency = 'POPLATEK TYDNE'"
+      }
+    ]
+  },
+  {
+    "id": "f11",
+    "tier": 3,
+    "turns": [
+      {
+        "question": "How many accounts have a disponent in addition to the owner?",
+        "gold_sql": "SELECT COUNT(DISTINCT account_id) FROM disp WHERE type = 'DISPONENT'"
+      },
+      {
+        "question": "How many of those accounts have at least one credit card issued on any of their dispositions?",
+        "gold_sql": "SELECT COUNT(DISTINCT d.account_id) FROM disp d JOIN card c ON c.disp_id = d.disp_id WHERE d.account_id IN (SELECT account_id FROM disp WHERE type = 'DISPONENT')"
+      },
+      {
+        "question": "Break those cards down by card type: type and number of cards.",
+        "gold_sql": "SELECT c.type, COUNT(*) FROM disp d JOIN card c ON c.disp_id = d.disp_id WHERE d.account_id IN (SELECT account_id FROM disp WHERE type = 'DISPONENT') GROUP BY c.type"
+      }
+    ]
+  },
+  {
+    "id": "f12",
+    "tier": 2,
+    "turns": [
+      {
+        "question": "What is the total amount of standing orders for household payments?",
+        "gold_sql": "SELECT SUM(amount) FROM \"order\" WHERE k_symbol = 'SIPO'"
+      },
+      {
+        "question": "And for insurance payments?",
+        "gold_sql": "SELECT SUM(amount) FROM \"order\" WHERE k_symbol = 'POJISTNE'"
+      },
+      {
+        "question": "Show the total for every payment purpose, excluding orders with no purpose recorded, largest first.",
+        "gold_sql": "SELECT k_symbol, SUM(amount) AS s FROM \"order\" WHERE k_symbol <> '' AND k_symbol IS NOT NULL GROUP BY k_symbol ORDER BY s DESC"
+      }
+    ]
+  },
+  {
+    "id": "f13",
+    "tier": 3,
+    "turns": [
+      {
+        "question": "Which district had the most crimes committed in 1996? Give its name and the number of crimes.",
+        "gold_sql": "SELECT A2, A16 FROM district ORDER BY A16 DESC LIMIT 1"
+      },
+      {
+        "question": "How many clients live there?",
+        "gold_sql": "SELECT COUNT(*) FROM client WHERE district_id = (SELECT district_id FROM district ORDER BY A16 DESC LIMIT 1)"
+      },
+      {
+        "question": "How many of them are women and how many are men? Show gender and count.",
+        "gold_sql": "SELECT gender, COUNT(*) FROM client WHERE district_id = (SELECT district_id FROM district ORDER BY A16 DESC LIMIT 1) GROUP BY gender"
+      },
+      {
+        "question": "Of the women, how many hold a gold credit card?",
+        "gold_sql": "SELECT COUNT(DISTINCT c.client_id) FROM client c JOIN disp d ON d.client_id = c.client_id JOIN card k ON k.disp_id = d.disp_id WHERE c.gender = 'F' AND k.type = 'gold' AND c.district_id = (SELECT district_id FROM district ORDER BY A16 DESC LIMIT 1)"
+      }
+    ]
+  },
+  {
+    "id": "f14",
+    "tier": 3,
+    "turns": [
+      {
+        "question": "What is the average loan amount per region, based on where the account is held? Show region and average.",
+        "gold_sql": "SELECT d.A3, AVG(l.amount) FROM loan l JOIN account a ON a.account_id = l.account_id JOIN district d ON d.district_id = a.district_id GROUP BY d.A3"
+      },
+      {
+        "question": "Which region has the lowest average? Give region and average.",
+        "gold_sql": "SELECT d.A3, AVG(l.amount) AS v FROM loan l JOIN account a ON a.account_id = l.account_id JOIN district d ON d.district_id = a.district_id GROUP BY d.A3 ORDER BY v ASC LIMIT 1"
+      },
+      {
+        "question": "List the districts in that region with their number of loans, most first.",
+        "gold_sql": "SELECT d.A2, COUNT(*) AS n FROM loan l JOIN account a ON a.account_id = l.account_id JOIN district d ON d.district_id = a.district_id WHERE d.A3 = 'north Bohemia' GROUP BY d.district_id ORDER BY n DESC"
+      }
+    ]
+  },
+  {
+    "id": "f15",
+    "tier": 3,
+    "turns": [
+      {
+        "question": "Which account had the most transactions in 1996? Give the account id and the number of transactions.",
+        "gold_sql": "SELECT account_id, COUNT(*) AS n FROM trans WHERE strftime('%Y', date) = '1996' GROUP BY account_id ORDER BY n DESC LIMIT 1"
+      },
+      {
+        "question": "What was the highest balance that account reached in 1996?",
+        "gold_sql": "SELECT MAX(balance) FROM trans WHERE account_id = 9307 AND strftime('%Y', date) = '1996'"
+      },
+      {
+        "question": "Does that account have a loan? If so, give the loan amount and status.",
+        "gold_sql": "SELECT amount, status FROM loan WHERE account_id = 9307"
+      }
+    ]
+  }
+]
