@@ -1,0 +1,56 @@
+// Render: dot -Tpng -Gdpi=200 docs/architecture.dot -o docs/architecture.png
+digraph firetext2sql {
+  graph [rankdir=TB, splines=ortho, newrank=true, fontname="Helvetica", fontsize=14, bgcolor="white",
+         pad=0.4, nodesep=0.6, ranksep=0.7, labelloc=t, labeljust=l,
+         label=<<b>firetext2sql v0.1</b>    <font point-size="11" color="#5b6b7f">solid = each question · dashed = once at startup</font>>];
+  node  [shape=box, style="rounded,filled", fontname="Helvetica", fontsize=12, color="#5b6b7f", fillcolor="#ffffff",
+         penwidth=1.3, width=2.6, height=0.85, fixedsize=true];
+  edge  [color="#5b6b7f", penwidth=1.3, arrowsize=0.7, dir=both];
+
+  user [label="User\n(terminal)", shape=oval, fillcolor="#eef2f7", width=1.6];
+
+  subgraph cluster_app {
+    label="firetext2sql  (local Python)"; style="rounded,filled"; fillcolor="#f6f8fb"; color="#b8c4d3"; fontcolor="#33414f"; fontsize=12;
+    cli     [group=c1, label=<<b>cli.py</b><br/><font point-size="10">REPL · SQL, results, timings</font>>];
+    agent   [group=c2, label=<<b>agent.py</b><br/><font point-size="10">generate → guard → run<br/>retry once on error</font>>, fillcolor="#e8f1ff", color="#3b6fb6"];
+    fwc     [group=c3, label=<<b>fireworks.py</b><br/><font point-size="10">HTTPS client · usage, latency</font>>];
+    context [group=c1, label=<<b>context.py</b><br/><font point-size="10">briefing: schema, notes, values</font>>];
+    guard   [group=c2, label=<<b>SQL guard</b><br/><font point-size="10">one SELECT · read-only · 15s</font>>, fillcolor="#fff6e5", color="#c48a1c"];
+  }
+
+  subgraph cluster_data {
+    label="Local data"; style="rounded,filled"; fillcolor="#f4faf4"; color="#a9cfa9"; fontcolor="#33414f"; fontsize=12;
+    docs [group=c1, label=<<b>database_description/</b><br/><font point-size="10">column-doc CSVs</font>>, shape=folder];
+    db   [group=c2, label=<<b>financial.sqlite</b><br/><font point-size="10">8 tables</font>>, shape=cylinder];
+  }
+
+  subgraph cluster_fw {
+    label="Fireworks AI  (serverless)"; labeljust=r; style="rounded,filled"; fillcolor="#fbf4fb"; color="#cfa9cf"; fontcolor="#33414f"; fontsize=12;
+    api   [group=c3, label=<<b>chat/completions</b><br/><font point-size="10">prompt cache</font>>];
+    model [label=<<b>glm-5p3-flash</b><br/><font point-size="10">JSON {reasoning, sql}</font>>, fillcolor="#f3e8ff", color="#7a4fb3"];
+  }
+
+  // rows
+  {rank=same; user; cli; agent; fwc}
+  {rank=same; context -> guard [style=invis, dir=none]}
+  {rank=same; docs -> db -> api -> model [style=invis, dir=none]}
+  cli -> context [style=invis, dir=none];
+  context -> docs [style=invis, dir=none, weight=10];
+  agent -> guard [style=invis, dir=none, weight=10];
+  guard -> db [style=invis, dir=none, weight=10];
+  fwc -> api [style=invis, dir=none, weight=10];
+
+  // each question
+  user  -> cli;
+  cli   -> agent;
+  agent -> fwc;
+  fwc   -> api;
+  agent -> guard;
+  guard -> db;
+
+  api -> model;
+
+  // once at startup
+  context -> agent [style=dashed, dir=forward];
+  context -> docs  [style=dashed, dir=back];
+}
